@@ -1,4 +1,4 @@
-package Object;
+package Objects;
 
 import java.io.Serializable;
 
@@ -11,7 +11,7 @@ public class Path implements Serializable
     private final String endNodeId;
     private final double pathLength;
 
-    public Path(String startNodeId, String endNodeId, int pathLength)
+    public Path(String startNodeId, String endNodeId, double pathLength)
     {
         this.startNodeId = startNodeId;
         this.endNodeId = endNodeId;

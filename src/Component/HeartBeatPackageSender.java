@@ -1,5 +1,6 @@
-package Processor;
+package Component;
 
+import Interface.TimingSender;
 import Message.HeartBeatPackage;
 
 import java.io.IOException;
@@ -10,10 +11,16 @@ import java.util.TimerTask;
 
 import static util.Broadcaster.*;
 
-public class HeartBeatPackageSender
+/**
+ * 心跳包发送器。每隔一段时间发送一个心跳包。
+ */
+public class HeartBeatPackageSender implements TimingSender
 {
     private final Timer timer;
 
+    /**
+     * 发送者的 NodeId
+     */
     private final String senderNodeId;
 
     /**
@@ -31,6 +38,12 @@ public class HeartBeatPackageSender
      */
     private List<Integer> neighborPorts;
 
+    /**
+     * @param senderNodeId   发送者的 NodeId。
+     * @param datagramSocket 发送图使用的 socket。
+     * @param neighborPorts  所有邻居结点的端口号。
+     * @param sendInterval   发送路径信息的间隔。
+     */
     public HeartBeatPackageSender(String senderNodeId, DatagramSocket datagramSocket, List<Integer> neighborPorts, long sendInterval)
     {
         this.senderNodeId = senderNodeId;

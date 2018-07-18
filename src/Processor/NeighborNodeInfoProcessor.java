@@ -2,14 +2,12 @@ package Processor;
 
 import Interface.MessageProcessor;
 import Message.NeighborNodeInfo;
-import Object.Graph;
+import Objects.Graph;
 
 import static util.Broadcaster.*;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.*;
 
 public class NeighborNodeInfoProcessor implements MessageProcessor

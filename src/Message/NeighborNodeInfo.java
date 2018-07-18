@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import Object.Path;
+import Objects.Path;
 
 /**
  * 广播使用邻居结点信息对象。
