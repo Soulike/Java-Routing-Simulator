@@ -1,7 +1,9 @@
-package Objects;
+package Component;
 
 import java.io.Serializable;
 import java.util.*;
+
+import Objects.*;
 
 public class Graph implements Serializable
 {
@@ -15,40 +17,36 @@ public class Graph implements Serializable
      * paths[1][2] 与 paths[2][1] 一定是相等的。
      */
     private double[][] paths;
+
+    /**
+     * 对象锁。
+     */
+
+    private final byte[] nodeIdsLock = new byte[0];
+    private final byte[] pathsLock = new byte[0];
+
+
     /**
      * 正无穷距离。
      */
-    private static int INF = -1;
-
-    /**
-     * 以下是对应对象的锁。用于防止并发修改。
-     */
-    private final int[] nodeIdsLock = new int[0];
-    private final int[] pathsLock = new int[0];
+    public static int INF = -1;
 
     public Graph(String nodeId)
     {
-        synchronized (nodeIdsLock)
-        {
-            nodeIds = new LinkedList<>();
-            nodeIds.add(nodeId);
-        }
-        synchronized (pathsLock)
-        {
-            paths = new double[nodeIds.size()][nodeIds.size()];
-        }
+        nodeIds = new LinkedList<>();
+        nodeIds.add(nodeId);
+        paths = new double[nodeIds.size()][nodeIds.size()];
     }
 
     public Graph(List<String> nodeIds, double[][] paths)
     {
-        synchronized (nodeIdsLock)
-        {
-            this.nodeIds = new LinkedList<>(nodeIds);
-        }
-        synchronized (pathsLock)
-        {
-            this.paths = paths.clone();
-        }
+        this.nodeIds = new LinkedList<>(nodeIds);
+        this.paths = paths.clone();
+    }
+
+    public boolean hasNode(String nodeId)
+    {
+        return nodeIds.contains(nodeId);
     }
 
     /**
@@ -56,15 +54,9 @@ public class Graph implements Serializable
      */
     public double getPathLength(String startNodeId, String endNodeId)
     {
-        synchronized (nodeIdsLock)
-        {
-            synchronized (pathsLock)
-            {
-                int startNodeIndex = getNodeIndex(startNodeId);
-                int endNodeIndex = getNodeIndex(endNodeId);
-                return paths[startNodeIndex][endNodeIndex];
-            }
-        }
+        int startNodeIndex = getNodeIndex(startNodeId);
+        int endNodeIndex = getNodeIndex(endNodeId);
+        return paths[startNodeIndex][endNodeIndex];
     }
 
     /**
@@ -80,12 +72,12 @@ public class Graph implements Serializable
      */
     public List<Path> getPathList()
     {
-        // 列表大小是可以确定的
-        final List<Path> pathList = new ArrayList<>((int) Math.pow(nodeIds.size(), 2));
         synchronized (nodeIdsLock)
         {
             synchronized (pathsLock)
             {
+                // 列表大小是可以确定的
+                final List<Path> pathList = new ArrayList<>((int) Math.pow(nodeIds.size(), 2));
                 for (int row = 0; row < nodeIds.size(); row++)
                 {
                     for (int col = 0; col < nodeIds.size(); col++)
@@ -93,9 +85,9 @@ public class Graph implements Serializable
                         pathList.add(new Path(nodeIds.get(row), nodeIds.get(col), paths[row][col]));
                     }
                 }
+                return pathList;
             }
         }
-        return pathList;
     }
 
     /**
@@ -205,12 +197,12 @@ public class Graph implements Serializable
      */
     public void updatePaths(List<Path> paths)
     {
-        int startNodeIndex = 0;
-        int endNodeIndex = 0;
         synchronized (nodeIdsLock)
         {
             synchronized (pathsLock)
             {
+                int startNodeIndex = 0;
+                int endNodeIndex = 0;
                 for (Path path : paths)
                 {
                     if (!nodeIds.contains(path.getStartNodeId()))
@@ -237,27 +229,30 @@ public class Graph implements Serializable
      */
     private void expandPaths()
     {
-        final int lastLength = paths.length;
-        final double[][] newPaths = new double[lastLength + 1][lastLength + 1];
-
-        for (int i = 0; i < lastLength + 1; i++)
+        synchronized (nodeIdsLock)
         {
-            for (int j = 0; j < lastLength + 1; j++)
+            synchronized (pathsLock)
             {
-                newPaths[i][j] = INF;
-            }
-        }
+                final int lastLength = paths.length;
+                final double[][] newPaths = new double[lastLength + 1][lastLength + 1];
 
-        synchronized (pathsLock)
-        {
-            for (int row = 0; row < lastLength; row++)
-            {
-                for (int col = 0; col < lastLength; col++)
+                for (int i = 0; i < lastLength + 1; i++)
                 {
-                    newPaths[row][col] = paths[row][col];
+                    for (int j = 0; j < lastLength + 1; j++)
+                    {
+                        newPaths[i][j] = INF;
+                    }
                 }
+
+                for (int row = 0; row < lastLength; row++)
+                {
+                    for (int col = 0; col < lastLength; col++)
+                    {
+                        newPaths[row][col] = paths[row][col];
+                    }
+                }
+                this.paths = newPaths;
             }
-            this.paths = newPaths;
         }
     }
 
@@ -268,40 +263,43 @@ public class Graph implements Serializable
      */
     private void shrinkPaths(int nodeIndex)
     {
-        final int lastLength = paths.length;
-        final double[][] newPaths = new double[lastLength - 1][lastLength - 1];
-        int newRow = 0;
-        int newCol = 0;
-        synchronized (pathsLock)
+        synchronized (nodeIdsLock)
         {
-            for (int row = 0; row < lastLength; row++)
+            synchronized (pathsLock)
             {
-                for (int col = 0; col < lastLength && row != nodeIndex; col++)
+                final int lastLength = paths.length;
+                final double[][] newPaths = new double[lastLength - 1][lastLength - 1];
+                int newRow = 0;
+                int newCol = 0;
+                for (int row = 0; row < lastLength; row++)
                 {
-                    if (col != nodeIndex)
+                    for (int col = 0; col < lastLength && row != nodeIndex; col++)
                     {
-                        if (row < nodeIndex)
+                        if (col != nodeIndex)
                         {
-                            newRow = row;
-                        }
-                        else
-                        {
-                            newRow = row - 1;
-                        }
+                            if (row < nodeIndex)
+                            {
+                                newRow = row;
+                            }
+                            else
+                            {
+                                newRow = row - 1;
+                            }
 
-                        if (col < nodeIndex)
-                        {
-                            newCol = col;
+                            if (col < nodeIndex)
+                            {
+                                newCol = col;
+                            }
+                            else
+                            {
+                                newCol = col - 1;
+                            }
+                            newPaths[newRow][newCol] = paths[row][col];
                         }
-                        else
-                        {
-                            newCol = col - 1;
-                        }
-                        newPaths[newRow][newCol] = paths[row][col];
                     }
                 }
+                paths = newPaths;
             }
-            paths = newPaths;
         }
     }
 
@@ -310,42 +308,45 @@ public class Graph implements Serializable
      */
     public void printShortestPaths(String nodeId)
     {
-        if (nodeIds.size() > 1)
+        synchronized (nodeIdsLock)
         {
-            synchronized (nodeIdsLock)
+            synchronized (pathsLock)
             {
-                final int nodeIndex = getNodeIndex(nodeId);
-                final Pair<int[], double[]> info = Dijkstra(nodeIndex);
-
-                final int[] prevNodeArray = info.getFirst();
-                final double[] currentShortestPathLengthArray = info.getSecond();
-                StringBuilder[] pathStr = new StringBuilder[nodeIds.size()];
-
-                for (int i = 0; i < pathStr.length; i++)
+                if (nodeIds.size() > 1)
                 {
-                    pathStr[i] = new StringBuilder();
-                }
+                    final int nodeIndex = getNodeIndex(nodeId);
+                    final Pair<int[], double[]> info = Dijkstra(nodeIndex);
 
-                int currentNodeIndex = -1;
+                    final int[] prevNodeArray = info.getFirst();
+                    final double[] currentShortestPathLengthArray = info.getSecond();
+                    StringBuilder[] pathStr = new StringBuilder[nodeIds.size()];
 
-                for (int i = 0; i < nodeIds.size(); i++)
-                {
-                    currentNodeIndex = i;
-                    while (currentNodeIndex != nodeIndex)
+                    for (int i = 0; i < pathStr.length; i++)
                     {
-                        pathStr[i].append(nodeIds.get(currentNodeIndex));
-                        currentNodeIndex = prevNodeArray[currentNodeIndex];
+                        pathStr[i] = new StringBuilder();
                     }
-                    pathStr[i].append(nodeId);
-                    pathStr[i].reverse();
 
-                    if (pathStr[i].length() != 0)
+                    int currentNodeIndex = -1;
+
+                    for (int i = 0; i < nodeIds.size(); i++)
                     {
-                        char targetNode = pathStr[i].charAt(pathStr[i].length() - 1);
-                        System.out.printf("least-cost path to node %c: %s and the cost is %f\n", targetNode, pathStr[i].toString(), currentShortestPathLengthArray[i]);
+                        currentNodeIndex = i;
+                        while (currentNodeIndex != nodeIndex)
+                        {
+                            pathStr[i].append(nodeIds.get(currentNodeIndex));
+                            currentNodeIndex = prevNodeArray[currentNodeIndex];
+                        }
+                        pathStr[i].append(nodeId);
+                        pathStr[i].reverse();
+
+                        if (pathStr[i].length() != 0)
+                        {
+                            char targetNode = pathStr[i].charAt(pathStr[i].length() - 1);
+                            System.out.printf("least-cost path to node %c: %s and the cost is %f\n", targetNode, pathStr[i].toString(), currentShortestPathLengthArray[i]);
+                        }
                     }
+                    System.out.println();
                 }
-                System.out.println();
             }
         }
     }
@@ -355,19 +356,22 @@ public class Graph implements Serializable
      */
     private int getNodeIndex(String nodeId)
     {
-        int index = -1;
         synchronized (nodeIdsLock)
         {
-            for (int i = 0; i < nodeIds.size(); i++)
+            synchronized (pathsLock)
             {
-                if (nodeIds.get(i).equals(nodeId))
+                int index = -1;
+                for (int i = 0; i < nodeIds.size(); i++)
                 {
-                    index = i;
-                    break;
+                    if (nodeIds.get(i).equals(nodeId))
+                    {
+                        index = i;
+                        break;
+                    }
                 }
+                return index;
             }
         }
-        return index;
     }
 
     /**
@@ -378,31 +382,40 @@ public class Graph implements Serializable
      */
     private int findShortestPath(double[] currentShortestPathLength, HashSet<Integer> processedNodes)
     {
-        int minIndex = -1;
-        double min = Integer.MAX_VALUE;
-        for (int i = 0; i < currentShortestPathLength.length; i++)
+        synchronized (nodeIdsLock)
         {
-            if (currentShortestPathLength[i] < min && currentShortestPathLength[i] != INF && !processedNodes.contains(i))
+            synchronized (pathsLock)
             {
-                min = currentShortestPathLength[i];
-                minIndex = i;
-            }
-        }
-
-        // 如果找不到最小的，证明出现了孤岛。应当删除图中完全连接不到的部分
-        if (minIndex == -1)
-        {
-            synchronized (nodeIdsLock)
-            {
+                int minIndex = -1;
+                double min = Integer.MAX_VALUE;
                 for (int i = 0; i < currentShortestPathLength.length; i++)
                 {
-                    if (currentShortestPathLength[i] == INF)
+                    if (currentShortestPathLength[i] < min && currentShortestPathLength[i] != INF && !processedNodes.contains(i))
                     {
-                        removeNode(nodeIds.get(i));
+                        min = currentShortestPathLength[i];
+                        minIndex = i;
                     }
                 }
+
+                // 如果找不到最小的，证明出现了孤岛。应当删除图中完全连接不到的部分
+                if (minIndex == -1)
+                {
+                    Set<String> nodeIdsToRemove = new HashSet<>();
+                    for (int i = 0; i < currentShortestPathLength.length; i++)
+                    {
+                        if (currentShortestPathLength[i] == INF)
+                        {
+                            nodeIdsToRemove.add(nodeIds.get(i));
+                        }
+                    }
+
+                    for (String nodeId : nodeIdsToRemove)
+                    {
+                        removeNode(nodeId);
+                    }
+                }
+                return minIndex;
             }
         }
-        return minIndex;
     }
 }

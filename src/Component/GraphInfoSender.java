@@ -2,7 +2,6 @@ package Component;
 
 import Interface.TimingSender;
 import Message.GraphInfo;
-import Objects.Graph;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -62,7 +61,10 @@ public class GraphInfoSender implements TimingSender
             {
                 try
                 {
-                    broadcast(new GraphInfo(graph), datagramSocket, neighborPorts);
+                    synchronized (graph)
+                    {
+                        broadcast(new GraphInfo(graph), datagramSocket, neighborPorts);
+                    }
                 }
                 catch (IOException e)
                 {

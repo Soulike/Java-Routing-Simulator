@@ -1,4 +1,4 @@
-import Objects.Node;
+import Component.Node;
 
 import java.io.*;
 import java.nio.file.Path;

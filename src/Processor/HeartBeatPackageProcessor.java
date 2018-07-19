@@ -2,7 +2,7 @@ package Processor;
 
 import Interface.MessageProcessor;
 import Message.HeartBeatPackage;
-import Objects.Graph;
+import Component.Graph;
 import Objects.Path;
 
 import java.util.*;
@@ -51,19 +51,15 @@ public class HeartBeatPackageProcessor implements MessageProcessor
                     synchronized (graph)
                     {
                         Set<String> keys = lastHeartBeatReceiveTime.keySet();
-                        Set<String> keysToRemove = new HashSet<>();
                         for (String key : keys)
                         {
                             if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
                             {
-                                graph.removeNode(key);
-                                keysToRemove.add(key);
+                                if (graph.hasNode(key))
+                                {
+                                    graph.removeNode(key);
+                                }
                             }
-                        }
-
-                        for (String key : keysToRemove)
-                        {
-                            lastHeartBeatReceiveTime.remove(key);
                         }
                     }
                 }

@@ -1,4 +1,4 @@
-package Objects;
+package Component;
 
 import Component.ThreadPool.ThreadPool;
 import Interface.MessageProcessor;
@@ -8,7 +8,7 @@ import Message.HeartBeatPackage;
 import Message.NeighborNodeInfo;
 import util.Broadcaster;
 import Processor.*;
-import Component.*;
+import Objects.*;
 import util.Converter;
 
 import java.io.EOFException;
@@ -70,7 +70,10 @@ public class Node
             @Override
             public void run()
             {
-                graph.printShortestPaths(nodeId);
+                synchronized (graph)
+                {
+                    graph.printShortestPaths(nodeId);
+                }
             }
         }, 0, printInterval);
     }
