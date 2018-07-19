@@ -29,7 +29,7 @@ public class Graph implements Serializable
     /**
      * 正无穷距离。
      */
-    public static int INF = -1;
+    public static final int INF = -1;
 
     public Graph(String nodeId)
     {
