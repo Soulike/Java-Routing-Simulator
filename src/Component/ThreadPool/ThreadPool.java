@@ -345,7 +345,7 @@ public class ThreadPool
                 {
                     checkPoolRange();
                     rearrangePool();
-                    printPoolStatus();
+                    //printPoolStatus();
                 }
             }, 0, 5000);
         }
