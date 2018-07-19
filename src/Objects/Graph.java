@@ -1,10 +1,7 @@
 package Objects;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class Graph implements Serializable
 {
@@ -26,8 +23,8 @@ public class Graph implements Serializable
     /**
      * 以下是对应对象的锁。用于防止并发修改。
      */
-    private final Object nodeIdsLock = new Object();
-    private final Object pathsLock = new Object();
+    private final int[] nodeIdsLock = new int[0];
+    private final int[] pathsLock = new int[0];
 
     public Graph(String nodeId)
     {
@@ -151,10 +148,13 @@ public class Graph implements Serializable
                     }
                     // 在这一轮循环结束之后查找当前最短路径
                     currentShortestPathIndex = findShortestPath(currentShortestPathLength, processedNodes);
-                    // 找到后，将其连接的结点添加到已处理集合中
-                    processedNodes.add(currentShortestPathIndex);
-                    // 修改lastProcessNodeIndex为这个结点
-                    lastProcessNodeIndex = currentShortestPathIndex;
+                    if (currentShortestPathIndex != -1)
+                    {
+                        // 找到后，将其连接的结点添加到已处理集合中
+                        processedNodes.add(currentShortestPathIndex);
+                        // 修改lastProcessNodeIndex为这个结点
+                        lastProcessNodeIndex = currentShortestPathIndex;
+                    }
                 }
                 return new Pair<>(prevNode, currentShortestPathLength);
             }
@@ -182,7 +182,7 @@ public class Graph implements Serializable
     /**
      * 删除结点及其路径。
      */
-    public synchronized void removeNode(String nodeId)
+    public void removeNode(String nodeId)
     {
         synchronized (nodeIdsLock)
         {
@@ -191,6 +191,8 @@ public class Graph implements Serializable
                 int nodeIndex = getNodeIndex(nodeId);
                 if (nodeIndex != -1)
                 {
+                    System.out.println(Arrays.toString(nodeIds.toArray()));
+                    System.out.println(nodeId);
                     nodeIds.remove(nodeIndex);
                     shrinkPaths(nodeIndex);
                 }
@@ -201,7 +203,7 @@ public class Graph implements Serializable
     /**
      * 根据传入的 Path 对象信息更新 paths 数组
      */
-    public synchronized void updatePaths(List<Path> paths)
+    public void updatePaths(List<Path> paths)
     {
         int startNodeIndex = 0;
         int endNodeIndex = 0;
@@ -233,10 +235,19 @@ public class Graph implements Serializable
     /**
      * 将 paths 数组扩大一行一列，并把原来的数据复制出来。
      */
-    private synchronized void expandPaths()
+    private void expandPaths()
     {
         final int lastLength = paths.length;
         final double[][] newPaths = new double[lastLength + 1][lastLength + 1];
+
+        for (int i = 0; i < lastLength + 1; i++)
+        {
+            for (int j = 0; j < lastLength + 1; j++)
+            {
+                newPaths[i][j] = INF;
+            }
+        }
+
         synchronized (pathsLock)
         {
             for (int row = 0; row < lastLength; row++)
@@ -255,10 +266,10 @@ public class Graph implements Serializable
      *
      * @param nodeIndex 要被删除的行列号。
      */
-    private synchronized void shrinkPaths(int nodeIndex)
+    private void shrinkPaths(int nodeIndex)
     {
         final int lastLength = paths.length;
-        final double[][] newPaths = new double[lastLength][lastLength];
+        final double[][] newPaths = new double[lastLength - 1][lastLength - 1];
         int newRow = 0;
         int newCol = 0;
         synchronized (pathsLock)
@@ -297,40 +308,52 @@ public class Graph implements Serializable
     /**
      * 输出最短路径信息。
      */
-    public void printShortestPaths(int nodeIndex)
+    public void printShortestPaths(String nodeId)
     {
-        final Pair<int[], double[]> info = Dijkstra(nodeIndex);
-
-        final int[] prevNodeArray = info.getFirst();
-        final double[] currentShortestPathLengthArray = info.getSecond();
-        StringBuilder[] pathStr = new StringBuilder[nodeIds.size()];
-
-        for (int i = 0; i < pathStr.length; i++)
+        if (nodeIds.size() > 1)
         {
-            pathStr[i] = new StringBuilder();
-        }
-
-        int currentNodeIndex = -1;
-
-        for (int i = 0; i < nodeIds.size(); i++)
-        {
-            currentNodeIndex = i;
-            while (currentNodeIndex != nodeIndex)
+            synchronized (nodeIdsLock)
             {
-                pathStr[i].append(nodeIds.get(currentNodeIndex));
-                currentNodeIndex = prevNodeArray[currentNodeIndex];
-            }
-            pathStr[i].reverse();
+                final int nodeIndex = getNodeIndex(nodeId);
+                final Pair<int[], double[]> info = Dijkstra(nodeIndex);
 
-            char targetNode = pathStr[i].charAt(pathStr[i].length() - 1);
-            System.out.printf("least-cost path to node %c: %s and the cost is %f\n", targetNode, pathStr[i].toString(), currentShortestPathLengthArray[i]);
+                final int[] prevNodeArray = info.getFirst();
+                final double[] currentShortestPathLengthArray = info.getSecond();
+                StringBuilder[] pathStr = new StringBuilder[nodeIds.size()];
+
+                for (int i = 0; i < pathStr.length; i++)
+                {
+                    pathStr[i] = new StringBuilder();
+                }
+
+                int currentNodeIndex = -1;
+
+                for (int i = 0; i < nodeIds.size(); i++)
+                {
+                    currentNodeIndex = i;
+                    while (currentNodeIndex != nodeIndex)
+                    {
+                        pathStr[i].append(nodeIds.get(currentNodeIndex));
+                        currentNodeIndex = prevNodeArray[currentNodeIndex];
+                    }
+                    pathStr[i].append(nodeId);
+                    pathStr[i].reverse();
+
+                    if (pathStr[i].length() != 0)
+                    {
+                        char targetNode = pathStr[i].charAt(pathStr[i].length() - 1);
+                        System.out.printf("least-cost path to node %c: %s and the cost is %f\n", targetNode, pathStr[i].toString(), currentShortestPathLengthArray[i]);
+                    }
+                }
+                System.out.println();
+            }
         }
     }
 
     /**
      * 找到这个结点 Id 在 nodeIds 中的下标。
      */
-    private synchronized int getNodeIndex(String nodeId)
+    private int getNodeIndex(String nodeId)
     {
         int index = -1;
         synchronized (nodeIdsLock)
@@ -353,7 +376,7 @@ public class Graph implements Serializable
      * @param currentShortestPathLength 当前到所有结点最短长度。
      * @param processedNodes            已经确定最短长度的结点集合。
      */
-    private static int findShortestPath(double[] currentShortestPathLength, HashSet<Integer> processedNodes)
+    private int findShortestPath(double[] currentShortestPathLength, HashSet<Integer> processedNodes)
     {
         int minIndex = -1;
         double min = Integer.MAX_VALUE;
@@ -363,6 +386,21 @@ public class Graph implements Serializable
             {
                 min = currentShortestPathLength[i];
                 minIndex = i;
+            }
+        }
+
+        // 如果找不到最小的，证明出现了孤岛。应当删除图中完全连接不到的部分
+        if (minIndex == -1)
+        {
+            synchronized (nodeIdsLock)
+            {
+                for (int i = 0; i < currentShortestPathLength.length; i++)
+                {
+                    if (currentShortestPathLength[i] == INF)
+                    {
+                        removeNode(nodeIds.get(i));
+                    }
+                }
             }
         }
         return minIndex;

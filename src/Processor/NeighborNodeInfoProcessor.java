@@ -102,15 +102,18 @@ public class NeighborNodeInfoProcessor implements MessageProcessor
 
     public void process(Object object) throws IOException
     {
-        NeighborNodeInfo info = (NeighborNodeInfo) object;
-        if (!hasProcessed(info))
+        synchronized (graph)
         {
-            synchronized (processedInfoTimestampsLock)
+            NeighborNodeInfo info = (NeighborNodeInfo) object;
+            if (!hasProcessed(info))
             {
-                processedInfoTimestamps.add(info.getSendTime());
+                synchronized (processedInfoTimestampsLock)
+                {
+                    processedInfoTimestamps.add(info.getSendTime());
+                }
+                graph.updatePaths(info.getPathList());
             }
-            graph.updatePaths(info.getPathList());
+            broadcast(info, datagramSocket, neighborPorts);
         }
-        broadcast(info, datagramSocket, neighborPorts);
     }
 }

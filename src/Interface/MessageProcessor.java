@@ -1,7 +1,9 @@
 package Interface;
 
+import Component.ThreadPool.*;
 
-public interface MessageProcessor
+
+public interface MessageProcessor extends Processor
 {
     void process(Object object) throws Exception;
 }

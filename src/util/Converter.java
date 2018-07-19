@@ -1,6 +1,7 @@
 package util;
 
 import java.io.*;
+import java.util.Arrays;
 
 /**
  * 常用格式转换器。
@@ -18,8 +19,10 @@ public class Converter
 
     public static Object byteArrayToObject(byte[] byteArray) throws IOException, ClassNotFoundException
     {
-        ByteArrayInputStream byteIn = new ByteArrayInputStream(byteArray);
-        ObjectInputStream objIn = new ObjectInputStream(byteIn);
-        return objIn.readObject();
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(byteArray);
+             ObjectInputStream objIn = new ObjectInputStream(byteIn))
+        {
+            return objIn.readObject();
+        }
     }
 }

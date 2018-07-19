@@ -25,32 +25,34 @@ public class GraphInfoProcessor implements MessageProcessor
     public void process(Object object)
     {
         GraphInfo info = (GraphInfo) object;
-        Graph neighborGraph = info.getGraph();
-        List<Path> neighborPathList = neighborGraph.getPathList();
+        List<Path> neighborPathList = info.getPathList();
         List<String> graphNodeIds = graph.getNodeIds();
 
         final ArrayList<Path> pathsToUpdate = new ArrayList<>();
 
-        for (Path path : neighborPathList)
+        synchronized (graph)
         {
-            // 这条路径有一端图里面没有，就添加这个结点以及路径
-            if (!graphNodeIds.contains(path.getStartNodeId()) || !graphNodeIds.contains(path.getEndNodeId()))
+            for (Path path : neighborPathList)
             {
-                pathsToUpdate.add(path);
-            }
 
-            // 如果两端都在图里，且不是与本结点直接相连的路径
-            // 与本结点直接相连的路径，取本地的数据，丢弃外来数据
-            else if (!path.getStartNodeId().equals(nodeId) && !path.getEndNodeId().equals(nodeId))
-            {
-                // 如果图的数据与接收到的图的数据不一致，就修改为接收到图的数据
-                if (graph.getPathLength(path.getStartNodeId(), path.getEndNodeId()) != path.getPathLength())
+                // 这条路径有一端图里面没有，就添加这个结点以及路径
+                if (!graphNodeIds.contains(path.getStartNodeId()) || !graphNodeIds.contains(path.getEndNodeId()))
                 {
                     pathsToUpdate.add(path);
                 }
-            }
-        }
 
-        graph.updatePaths(pathsToUpdate);
+                // 如果两端都在图里，且不是与本结点直接相连的路径
+                // 与本结点直接相连的路径，取本地的数据，丢弃外来数据
+                else if (!path.getStartNodeId().equals(nodeId) && !path.getEndNodeId().equals(nodeId))
+                {
+                    // 如果图的数据与接收到的图的数据不一致，就修改为接收到图的数据
+                    if (graph.getPathLength(path.getStartNodeId(), path.getEndNodeId()) != path.getPathLength())
+                    {
+                        pathsToUpdate.add(path);
+                    }
+                }
+            }
+            graph.updatePaths(pathsToUpdate);
+        }
     }
 }

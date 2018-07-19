@@ -3,11 +3,9 @@ package Processor;
 import Interface.MessageProcessor;
 import Message.HeartBeatPackage;
 import Objects.Graph;
+import Objects.Path;
 
-import java.util.HashMap;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class HeartBeatPackageProcessor implements MessageProcessor
 {
@@ -26,10 +24,19 @@ public class HeartBeatPackageProcessor implements MessageProcessor
 
     private final Timer timer;
 
-    public HeartBeatPackageProcessor(Graph graph, long sendInterval)
+    public HeartBeatPackageProcessor(Graph graph, List<Path> neighborPaths, long sendInterval)
     {
         this.sendInterval = sendInterval;
         lastHeartBeatReceiveTime = new HashMap<>();
+
+        long timestampNow = System.currentTimeMillis();
+        synchronized (lastHeartBeatReceiveTimeLock)
+        {
+            for (Path path : neighborPaths)
+            {
+                lastHeartBeatReceiveTime.put(path.getEndNodeId(), timestampNow);
+            }
+        }
 
         timer = new Timer(true);
         // 定时每个 sendInterval 检查是否有结点超过三个间隔没有收到心跳包。有的话从图中删掉结点。
@@ -41,18 +48,27 @@ public class HeartBeatPackageProcessor implements MessageProcessor
                 long timestampNow = System.currentTimeMillis();
                 synchronized (lastHeartBeatReceiveTimeLock)
                 {
-                    Set<String> keys = lastHeartBeatReceiveTime.keySet();
-                    for (String key : keys)
+                    synchronized (graph)
                     {
-                        if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
+                        Set<String> keys = lastHeartBeatReceiveTime.keySet();
+                        Set<String> keysToRemove = new HashSet<>();
+                        for (String key : keys)
                         {
-                            graph.removeNode(key);
+                            if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
+                            {
+                                graph.removeNode(key);
+                                keysToRemove.add(key);
+                            }
+                        }
+
+                        for (String key : keysToRemove)
+                        {
                             lastHeartBeatReceiveTime.remove(key);
                         }
                     }
                 }
             }
-        }, sendInterval);
+        }, 0, sendInterval);
     }
 
     public void process(Object object)
