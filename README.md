@@ -6,7 +6,7 @@ Java 小学期大作业。路由模拟器。
 ## 部署方法
 1. 在 IDEA 点击上步菜单 Build-Build Project 下编译整个项目；
 2. 把 graph1 或者 graph2 下面的 config.conf 复制一份到项目目录下的 out/production/Java-Routing-Simulator 下，与 Main.class 同目录；
-3. 在 graph1 或 graph2 文件夹下开 N 个命令行窗口，同时运行 graph1 或 graph2 下的 N 个 .sh 文件；
+3. 在 graph1 或 graph2 文件夹下开 N 个命令行窗口（Ubuntu 下是在文件夹里右键-在终端打开），同时运行 graph1 或 graph2 下的 N 个 .sh 文件；
 4. debug，emmmmm……。
 
 ## 原始需求
