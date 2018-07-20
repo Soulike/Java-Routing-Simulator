@@ -3,6 +3,12 @@
 ## 项目介绍
 Java 小学期大作业。路由模拟器。
 
+## 部署方法
+1. 在 IDEA 点击上步菜单 Build-Build Project 下编译整个项目；
+2. 把 graph1 或者 graph2 下面的 config.conf 复制一份到项目目录下的 out/production/Java-Routing-Simulator 下，与 Main.class 同目录；
+3. 在 graph1 或 graph2 文件夹下开 N 个命令行窗口，同时运行 graph1 或 graph2 下的 N 个 .sh 文件；
+4. debug，emmmmm……。
+
 ## 原始需求
 
 本次作业要求实现路由协议，编写的程序运行每个路由节点上，通过进程来模拟路由节点。进程运行的时候读入路径信息数据。在一台计算机上通过选择不同的端口来模拟不同的网络节点。每个节点通过UDP协议将路径信息发送给其他所有节点。程序必须能够处理死节点（例如某个节点意外宕机）。
