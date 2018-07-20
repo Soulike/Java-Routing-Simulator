@@ -1,10 +1,7 @@
 package util;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.*;
+import java.net.*;
 import java.util.List;
 
 import static util.Converter.objectToByteArray;

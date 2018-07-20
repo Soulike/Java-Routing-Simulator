@@ -4,8 +4,7 @@ import Component.Graph;
 import Objects.Path;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * 路径信息。用于网络传输。

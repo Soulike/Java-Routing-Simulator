@@ -1,7 +1,6 @@
 package util;
 
 import java.io.*;
-import java.util.Arrays;
 
 /**
  * 常用格式转换器。

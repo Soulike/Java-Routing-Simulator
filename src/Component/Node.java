@@ -1,12 +1,8 @@
 package Component;
 
-import Component.ThreadPool.Processor;
-import Component.ThreadPool.ThreadPool;
-import Interface.MessageProcessor;
-import Interface.TimingSender;
-import Message.GraphInfo;
-import Message.HeartBeatPackage;
-import Message.NeighborNodeInfo;
+import Component.ThreadPool.*;
+import Interface.*;
+import Message.*;
 import util.Broadcaster;
 import Processor.*;
 import Objects.*;
