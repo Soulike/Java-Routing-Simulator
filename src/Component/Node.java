@@ -1,5 +1,6 @@
 package Component;
 
+import Component.ThreadPool.Processor;
 import Component.ThreadPool.ThreadPool;
 import Interface.MessageProcessor;
 import Interface.TimingSender;
@@ -31,6 +32,7 @@ public class Node
     private final MessageProcessor graphInfoProcessor;
     private final MessageProcessor heartBeatPackageProcessor;
     private final MessageProcessor neighborNodeInfoProcessor;
+    private final Processor consoleInputProcessor;
     private final TimingSender graphInfoSender;
     private final TimingSender heartBeatPackageSender;
 
@@ -55,6 +57,7 @@ public class Node
         this.graphInfoProcessor = new GraphInfoProcessor(graph, nodeId);
         this.heartBeatPackageProcessor = new HeartBeatPackageProcessor(graph, neighborPaths, heartBeatSendInterval);
         this.neighborNodeInfoProcessor = new NeighborNodeInfoProcessor(graph, socket);
+        this.consoleInputProcessor = new ConsoleInputProcessor(graph, nodeId);
 
 
         Broadcaster.broadcast(new NeighborNodeInfo(nodeId, neighborPaths), socket, neighborPorts);
@@ -64,6 +67,9 @@ public class Node
 
         graphInfoSender.start();
         heartBeatPackageSender.start();
+
+        pool.createThread(System.in, consoleInputProcessor);
+
 
         new Timer(true).schedule(new TimerTask()
         {
@@ -75,7 +81,7 @@ public class Node
                     graph.printShortestPaths(nodeId);
                 }
             }
-        }, 0, printInterval);
+        }, printInterval, printInterval);
     }
 
 

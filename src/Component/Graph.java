@@ -183,8 +183,6 @@ public class Graph implements Serializable
                 int nodeIndex = getNodeIndex(nodeId);
                 if (nodeIndex != -1)
                 {
-                    System.out.println(Arrays.toString(nodeIds.toArray()));
-                    System.out.println(nodeId);
                     nodeIds.remove(nodeIndex);
                     shrinkPaths(nodeIndex);
                 }
@@ -312,41 +310,38 @@ public class Graph implements Serializable
         {
             synchronized (pathsLock)
             {
-                if (nodeIds.size() > 1)
+                final int nodeIndex = getNodeIndex(nodeId);
+                final Pair<int[], double[]> info = Dijkstra(nodeIndex);
+
+                final int[] prevNodeArray = info.getFirst();
+                final double[] currentShortestPathLengthArray = info.getSecond();
+                StringBuilder[] pathStr = new StringBuilder[nodeIds.size()];
+
+                for (int i = 0; i < pathStr.length; i++)
                 {
-                    final int nodeIndex = getNodeIndex(nodeId);
-                    final Pair<int[], double[]> info = Dijkstra(nodeIndex);
-
-                    final int[] prevNodeArray = info.getFirst();
-                    final double[] currentShortestPathLengthArray = info.getSecond();
-                    StringBuilder[] pathStr = new StringBuilder[nodeIds.size()];
-
-                    for (int i = 0; i < pathStr.length; i++)
-                    {
-                        pathStr[i] = new StringBuilder();
-                    }
-
-                    int currentNodeIndex = -1;
-
-                    for (int i = 0; i < nodeIds.size(); i++)
-                    {
-                        currentNodeIndex = i;
-                        while (currentNodeIndex != nodeIndex)
-                        {
-                            pathStr[i].append(nodeIds.get(currentNodeIndex));
-                            currentNodeIndex = prevNodeArray[currentNodeIndex];
-                        }
-                        pathStr[i].append(nodeId);
-                        pathStr[i].reverse();
-
-                        if (pathStr[i].length() != 0)
-                        {
-                            char targetNode = pathStr[i].charAt(pathStr[i].length() - 1);
-                            System.out.printf("least-cost path to node %c: %s and the cost is %f\n", targetNode, pathStr[i].toString(), currentShortestPathLengthArray[i]);
-                        }
-                    }
-                    System.out.println();
+                    pathStr[i] = new StringBuilder();
                 }
+
+                int currentNodeIndex = -1;
+
+                for (int i = 0; i < nodeIds.size(); i++)
+                {
+                    currentNodeIndex = i;
+                    while (currentNodeIndex != nodeIndex)
+                    {
+                        pathStr[i].append(nodeIds.get(currentNodeIndex));
+                        currentNodeIndex = prevNodeArray[currentNodeIndex];
+                    }
+                    pathStr[i].append(nodeId);
+                    pathStr[i].reverse();
+
+                    if (pathStr[i].length() != 0)
+                    {
+                        char targetNode = pathStr[i].charAt(pathStr[i].length() - 1);
+                        System.out.printf("least-cost path to node %c: %s and the cost is %f\n", targetNode, pathStr[i].toString(), currentShortestPathLengthArray[i]);
+                    }
+                }
+                System.out.println();
             }
         }
     }
