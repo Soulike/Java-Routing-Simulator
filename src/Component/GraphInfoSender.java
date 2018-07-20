@@ -5,14 +5,12 @@ import Message.GraphInfo;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import static util.Broadcaster.*;
 
 /**
- * 路径信息发送器，定时发送本结点的所有路径信息（整个图对象）
+ * 路径信息发送器，定时发送本结点的所有路径信息（一个 Path 对象 List）
  */
 public class GraphInfoSender implements TimingSender
 {

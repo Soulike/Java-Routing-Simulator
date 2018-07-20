@@ -12,15 +12,15 @@ import Processor.*;
 import Objects.*;
 import util.Converter;
 
-import java.io.EOFException;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.io.*;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 
+/**
+ * 结点对象。
+ */
 public class Node
 {
     private final String nodeId;

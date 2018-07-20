@@ -5,23 +5,26 @@ import java.util.*;
 
 import Objects.*;
 
-public class Graph implements Serializable
+/**
+ * 结点使用的图对象。
+ */
+public class Graph
 {
     /**
-     * 所有结点的名称
+     * 所有结点的名称。
      */
     private List<String> nodeIds;
     /**
      * 结点之间的路径长度。
      * 例如 paths[1][2] 即为 1 号结点到 2 号结点的路径长度，他们的名字分别为 nodeIds[1] 和 nodeIds[2]。
      * paths[1][2] 与 paths[2][1] 一定是相等的。
+     * 如果结点直接不直接相通，则值为 INF（即-1）。
      */
     private double[][] paths;
 
     /**
-     * 对象锁。
+     * 对象锁。限制并发访问。
      */
-
     private final byte[] nodeIdsLock = new byte[0];
     private final byte[] pathsLock = new byte[0];
 
@@ -31,6 +34,11 @@ public class Graph implements Serializable
      */
     public static final int INF = -1;
 
+    /**
+     * 构造函数。
+     *
+     * @param nodeId 当前结点的 nodeId。
+     */
     public Graph(String nodeId)
     {
         nodeIds = new LinkedList<>();
@@ -44,13 +52,16 @@ public class Graph implements Serializable
         this.paths = paths.clone();
     }
 
+    /**
+     * 测试这张图中是否有某个结点。
+     */
     public boolean hasNode(String nodeId)
     {
         return nodeIds.contains(nodeId);
     }
 
     /**
-     * 获取两个结点之间的路径长度
+     * 获取两个结点之间的路径长度。
      */
     public double getPathLength(String startNodeId, String endNodeId)
     {
@@ -68,7 +79,8 @@ public class Graph implements Serializable
     }
 
     /**
-     * 把图的数组矩阵转换为 Path 对象列表
+     * 把图的数组矩阵转换为 Path 对象列表。
+     * 项目当中出现的所有 Path 对象都是自定义的路径对象，不是标准库的 Path 对象。
      */
     public List<Path> getPathList()
     {
@@ -76,7 +88,7 @@ public class Graph implements Serializable
         {
             synchronized (pathsLock)
             {
-                // 列表大小是可以确定的
+                // 列表大小是可以确定的，可以提前申请空间
                 final List<Path> pathList = new ArrayList<>((int) Math.pow(nodeIds.size(), 2));
                 for (int row = 0; row < nodeIds.size(); row++)
                 {
@@ -103,13 +115,13 @@ public class Graph implements Serializable
         {
             synchronized (pathsLock)
             {
-                HashSet<Integer> processedNodes = new HashSet<>();//已经找到最短路径的结点号集合
-                int[] prevNode = new int[nodeIds.size()];//每个结点最短路径的前一个结点号
-                double[] currentShortestPathLength = new double[nodeIds.size()];//从nodeName到各个结点的目前最短长度
-                int currentShortestPathIndex = 0;//每一轮查找后最短路径的编号
-                int lastProcessNodeIndex = nodeIndex;//最后一个找到的距离最短的结点
+                HashSet<Integer> processedNodes = new HashSet<>();// 已经找到最短路径的结点号集合
+                int[] prevNode = new int[nodeIds.size()];// 每个结点最短路径的前一个结点号
+                double[] currentShortestPathLength = new double[nodeIds.size()];// 从 nodeId 到各个结点的目前最短长度
+                int currentShortestPathIndex = 0;// 每一轮查找后最短路径的编号
+                int lastProcessNodeIndex = nodeIndex;// 最后一个找到的距离最短的结点
 
-                //给距离数组赋初值
+                // 给距离数组赋初值
                 for (int i = 0; i < currentShortestPathLength.length; i++)
                 {
                     // 到自己距离是0
@@ -125,6 +137,7 @@ public class Graph implements Serializable
                 }
                 // 起始结点算作处理过的
                 processedNodes.add(nodeIndex);
+
                 // 当已找到最短路径集合还没有包含所有结点的时候，继续循环
                 while (processedNodes.size() != nodeIds.size())
                 {
@@ -140,7 +153,27 @@ public class Graph implements Serializable
                     }
                     // 在这一轮循环结束之后查找当前最短路径
                     currentShortestPathIndex = findShortestPath(currentShortestPathLength, processedNodes);
-                    if (currentShortestPathIndex != -1)
+
+                    // 如果找不到最小的，证明出现了孤岛。应当删除图中完全连接不到的部分
+                    if (currentShortestPathIndex == -1)
+                    {
+                        Set<String> nodeIdsToRemove = new HashSet<>();
+
+                        //这个地方，之所以要分开查找与删除是因为 currentShortestPathLength 里的下标和 nodeIds 的下标是对应的。如果边找边删刚删完前面的就找不到后面对应结点的正确下标了
+                        for (int i = 0; i < currentShortestPathLength.length; i++)
+                        {
+                            if (currentShortestPathLength[i] == INF)
+                            {
+                                nodeIdsToRemove.add(nodeIds.get(i));
+                            }
+                        }
+
+                        for (String nodeId : nodeIdsToRemove)
+                        {
+                            removeNode(nodeId);
+                        }
+                    }
+                    else
                     {
                         // 找到后，将其连接的结点添加到已处理集合中
                         processedNodes.add(currentShortestPathIndex);
@@ -203,6 +236,8 @@ public class Graph implements Serializable
                 int endNodeIndex = 0;
                 for (Path path : paths)
                 {
+                    // 如果起始结点或结束结点不在图里，就把它添加到图里
+
                     if (!nodeIds.contains(path.getStartNodeId()))
                     {
                         addNode(path.getStartNodeId());
@@ -234,6 +269,7 @@ public class Graph implements Serializable
                 final int lastLength = paths.length;
                 final double[][] newPaths = new double[lastLength + 1][lastLength + 1];
 
+                // 先把整个矩阵都设置为 INF 值，否则会出现距离 0
                 for (int i = 0; i < lastLength + 1; i++)
                 {
                     for (int j = 0; j < lastLength + 1; j++)
@@ -271,23 +307,28 @@ public class Graph implements Serializable
                 int newCol = 0;
                 for (int row = 0; row < lastLength; row++)
                 {
+                    // nodeIndex 那一行不进行复制
                     for (int col = 0; col < lastLength && row != nodeIndex; col++)
                     {
                         if (col != nodeIndex)
                         {
+                            // 如果当前行小于 nodeIndex，则原位复制
                             if (row < nodeIndex)
                             {
                                 newRow = row;
                             }
+                            // 如果当前行大于 nodeIndex，则放到原来的上一行
                             else
                             {
                                 newRow = row - 1;
                             }
 
+                            // 如果当前列小于 nodeIndex，则原位复制
                             if (col < nodeIndex)
                             {
                                 newCol = col;
                             }
+                            // 如果当前列大于 nodeIndex，则放到原来的上一列
                             else
                             {
                                 newCol = col - 1;
@@ -313,8 +354,13 @@ public class Graph implements Serializable
                 final int nodeIndex = getNodeIndex(nodeId);
                 final Pair<int[], double[]> info = Dijkstra(nodeIndex);
 
+                // 上一结点编号数组：下标 i 存储的数据 j 代表想要到达 i 号结点，需要先到达 j 号结点。nodeIndex 号结点的上一个结点编号等于 nodeIndex。
                 final int[] prevNodeArray = info.getFirst();
+
+                // 最短长度数组：下标 i 存储的数据 j 代表从 nodeIndex 号结点到 i 号结点的最短长度是 j。
                 final double[] currentShortestPathLengthArray = info.getSecond();
+
+                // 每个结点的路径字符串。刚开始是倒过来组装的（因为是倒着往回找的）。
                 StringBuilder[] pathStr = new StringBuilder[nodeIds.size()];
 
                 for (int i = 0; i < pathStr.length; i++)
@@ -332,7 +378,10 @@ public class Graph implements Serializable
                         pathStr[i].append(nodeIds.get(currentNodeIndex));
                         currentNodeIndex = prevNodeArray[currentNodeIndex];
                     }
+
+                    // 添加上出发结点
                     pathStr[i].append(nodeId);
+                    // 倒过来是正确的顺序
                     pathStr[i].reverse();
 
                     if (pathStr[i].length() != 0)
@@ -389,24 +438,6 @@ public class Graph implements Serializable
                     {
                         min = currentShortestPathLength[i];
                         minIndex = i;
-                    }
-                }
-
-                // 如果找不到最小的，证明出现了孤岛。应当删除图中完全连接不到的部分
-                if (minIndex == -1)
-                {
-                    Set<String> nodeIdsToRemove = new HashSet<>();
-                    for (int i = 0; i < currentShortestPathLength.length; i++)
-                    {
-                        if (currentShortestPathLength[i] == INF)
-                        {
-                            nodeIdsToRemove.add(nodeIds.get(i));
-                        }
-                    }
-
-                    for (String nodeId : nodeIdsToRemove)
-                    {
-                        removeNode(nodeId);
                     }
                 }
                 return minIndex;
