@@ -73,7 +73,7 @@ public class NeighborNodeInfoProcessor implements MessageProcessor
     }
 
     /**
-     * 判断两个时间戳间隔是否大于一分钟。
+     * 判断两个时间戳间隔是否大于十分钟。
      */
     private static boolean longerThanTenMins(long timestamp1, long timestamp2)
     {
@@ -95,6 +95,9 @@ public class NeighborNodeInfoProcessor implements MessageProcessor
         neighborPorts.remove(port);
     }
 
+    /**
+     * 检测包是否是重复收到的。
+     */
     private boolean hasProcessed(NeighborNodeInfo info)
     {
         return processedInfoTimestamps.contains(info.getSendTime());
@@ -105,6 +108,7 @@ public class NeighborNodeInfoProcessor implements MessageProcessor
         synchronized (graph)
         {
             NeighborNodeInfo info = (NeighborNodeInfo) object;
+            // 如果这个广播包是第一次收到，就进行相应处理
             if (!hasProcessed(info))
             {
                 synchronized (processedInfoTimestampsLock)

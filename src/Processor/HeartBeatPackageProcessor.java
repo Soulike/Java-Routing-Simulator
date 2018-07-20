@@ -22,13 +22,10 @@ public class HeartBeatPackageProcessor implements MessageProcessor
     private final Object lastHeartBeatReceiveTimeLock = new Object();
 
 
-    private final Timer timer;
-
-    private final String nodeId;
+    private final Timer sendTimer;
 
     public HeartBeatPackageProcessor(String nodeId, Graph graph, List<Path> neighborPaths, long sendInterval)
     {
-        this.nodeId = nodeId;
         this.sendInterval = sendInterval;
         lastHeartBeatReceiveTime = new HashMap<>();
 
@@ -41,9 +38,9 @@ public class HeartBeatPackageProcessor implements MessageProcessor
             }
         }
 
-        timer = new Timer(true);
+        sendTimer = new Timer(true);
         // 定时每个 sendInterval 检查是否有结点超过三个间隔没有收到心跳包。有的话设置到对应边的长度为无穷。
-        timer.schedule(new TimerTask()
+        sendTimer.schedule(new TimerTask()
         {
             @Override
             public void run()

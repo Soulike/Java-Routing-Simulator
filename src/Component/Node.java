@@ -27,12 +27,22 @@ public class Node
     private final DatagramSocket socket;
     private final Graph graph;
 
+    /**
+     * 线程池
+     */
     private final ThreadPool pool;
 
+    /**
+     * 各种处理器。
+     */
     private final MessageProcessor graphInfoProcessor;
     private final MessageProcessor heartBeatPackageProcessor;
     private final MessageProcessor neighborNodeInfoProcessor;
     private final Processor consoleInputProcessor;
+
+    /**
+     * 各种定时发送器。
+     */
     private final TimingSender graphInfoSender;
     private final TimingSender heartBeatPackageSender;
 
@@ -59,10 +69,12 @@ public class Node
         this.neighborNodeInfoProcessor = new NeighborNodeInfoProcessor(graph, socket);
         this.consoleInputProcessor = new ConsoleInputProcessor(graph, nodeId);
 
-
+        // 把自己以及邻居结点信息广播到所有邻居结点
         Broadcaster.broadcast(new NeighborNodeInfo(nodeId, neighborPaths), socket, neighborPorts);
 
+        // 路径信息定时发送器。这里对设定的时间进行了 25% 上下的浮动以防止路由信息更新无法扩散
         this.graphInfoSender = new GraphInfoSender(graph, socket, neighborPorts, graphInfoSendInterval + Math.round((Math.random() - 0.5) * 0.5 * graphInfoSendInterval));
+
         this.heartBeatPackageSender = new HeartBeatPackageSender(nodeId, socket, neighborPorts, heartBeatSendInterval);
 
         graphInfoSender.start();
@@ -70,7 +82,7 @@ public class Node
 
         pool.createThread(System.in, consoleInputProcessor);
 
-
+        // 每隔一段时间输出一次最短路径信息
         new Timer(true).schedule(new TimerTask()
         {
             @Override

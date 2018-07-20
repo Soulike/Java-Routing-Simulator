@@ -24,6 +24,9 @@ public class GraphInfoProcessor implements MessageProcessor
         this.graph = graph;
     }
 
+    /**
+     * 这里的处理思想是：与自己直接连接的路径由自己负责，其他的所有路径都无条件相信邻居提供的路径信息。
+     */
     public void process(Object object)
     {
         synchronized (graph)
