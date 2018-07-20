@@ -1,2 +1,2 @@
 cd ..
-java Main D 3003 graph1/D.txt
+java ./out/production/Java-Routing-Simulator/Main D 3003 graph1/D.txt

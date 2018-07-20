@@ -1,2 +1,2 @@
 cd ..
-java Main A 3000 graph1/A.txt
+java ./out/production/Java-Routing-Simulator/Main A 3000 graph1/A.txt
