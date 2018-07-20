@@ -32,4 +32,22 @@ public class Path implements Serializable
     {
         return pathLength;
     }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+        else if (obj.getClass() != Path.class)
+        {
+            return false;
+        }
+        else
+        {
+            Path path = (Path) obj;
+            return path.startNodeId.equals(startNodeId) && path.endNodeId.equals(endNodeId);
+        }
+    }
 }

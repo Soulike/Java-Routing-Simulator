@@ -55,14 +55,14 @@ public class Node
         List<Path> neighborPaths = readConfigFile(neighborConfigFilePath);
 
         this.graphInfoProcessor = new GraphInfoProcessor(graph, nodeId);
-        this.heartBeatPackageProcessor = new HeartBeatPackageProcessor(graph, neighborPaths, heartBeatSendInterval);
+        this.heartBeatPackageProcessor = new HeartBeatPackageProcessor(nodeId, graph, neighborPaths, heartBeatSendInterval);
         this.neighborNodeInfoProcessor = new NeighborNodeInfoProcessor(graph, socket);
         this.consoleInputProcessor = new ConsoleInputProcessor(graph, nodeId);
 
 
         Broadcaster.broadcast(new NeighborNodeInfo(nodeId, neighborPaths), socket, neighborPorts);
 
-        this.graphInfoSender = new GraphInfoSender(graph, socket, neighborPorts, graphInfoSendInterval);
+        this.graphInfoSender = new GraphInfoSender(graph, socket, neighborPorts, graphInfoSendInterval + Math.round((Math.random() - 0.5) * 0.5 * graphInfoSendInterval));
         this.heartBeatPackageSender = new HeartBeatPackageSender(nodeId, socket, neighborPorts, heartBeatSendInterval);
 
         graphInfoSender.start();

@@ -1,6 +1,5 @@
 package Component;
 
-import java.io.Serializable;
 import java.util.*;
 
 import Objects.*;
@@ -41,14 +40,14 @@ public class Graph
      */
     public Graph(String nodeId)
     {
-        nodeIds = new LinkedList<>();
+        nodeIds = new ArrayList<>();
         nodeIds.add(nodeId);
         paths = new double[nodeIds.size()][nodeIds.size()];
     }
 
     public Graph(List<String> nodeIds, double[][] paths)
     {
-        this.nodeIds = new LinkedList<>(nodeIds);
+        this.nodeIds = new ArrayList<>(nodeIds);
         this.paths = paths.clone();
     }
 
@@ -88,13 +87,16 @@ public class Graph
         {
             synchronized (pathsLock)
             {
-                // 列表大小是可以确定的，可以提前申请空间
-                final List<Path> pathList = new ArrayList<>((int) Math.pow(nodeIds.size(), 2));
+                final List<Path> pathList = new ArrayList<>();
                 for (int row = 0; row < nodeIds.size(); row++)
                 {
                     for (int col = 0; col < nodeIds.size(); col++)
                     {
-                        pathList.add(new Path(nodeIds.get(row), nodeIds.get(col), paths[row][col]));
+                        // 自己到自己的不算，正无穷的不算
+                        if (row != col && paths[row][col] != INF)
+                        {
+                            pathList.add(new Path(nodeIds.get(row), nodeIds.get(col), paths[row][col]));
+                        }
                     }
                 }
                 return pathList;
@@ -117,63 +119,45 @@ public class Graph
             {
                 HashSet<Integer> processedNodes = new HashSet<>();// 已经找到最短路径的结点号集合
                 int[] prevNode = new int[nodeIds.size()];// 每个结点最短路径的前一个结点号
-                double[] currentShortestPathLength = new double[nodeIds.size()];// 从 nodeId 到各个结点的目前最短长度
+                double[] currentShortestPathLengthArray = new double[nodeIds.size()];// 从 nodeId 到各个结点的目前最短长度
                 int currentShortestPathIndex = 0;// 每一轮查找后最短路径的编号
                 int lastProcessNodeIndex = nodeIndex;// 最后一个找到的距离最短的结点
 
                 // 给距离数组赋初值
-                for (int i = 0; i < currentShortestPathLength.length; i++)
+                for (int i = 0; i < currentShortestPathLengthArray.length; i++)
                 {
                     // 到自己距离是0
                     if (i == nodeIndex)
                     {
-                        currentShortestPathLength[i] = 0;
+                        currentShortestPathLengthArray[i] = 0;
                     }
                     // 到其他的都设为INF
                     else
                     {
-                        currentShortestPathLength[i] = INF;
+                        currentShortestPathLengthArray[i] = INF;
                     }
                 }
                 // 起始结点算作处理过的
                 processedNodes.add(nodeIndex);
 
                 // 当已找到最短路径集合还没有包含所有结点的时候，继续循环
-                while (processedNodes.size() != nodeIds.size())
+                while (processedNodes.size() != nodeIds.size() && currentShortestPathIndex != -1)
                 {
                     // 从lastProcessNodeIndex出发比较新路径是否比老路径更短
                     for (int i = 0; i < nodeIds.size(); i++)
                     {
                         // 新路径比老路径更短，且这个距离不是INF，且这个结点不包含在已处理结点集合中，则更新路径长度与上一结点编号
-                        if ((paths[lastProcessNodeIndex][i] + currentShortestPathLength[lastProcessNodeIndex] < currentShortestPathLength[i] || currentShortestPathLength[i] == INF) && paths[lastProcessNodeIndex][i] != INF && !processedNodes.contains(i))
+                        if ((paths[lastProcessNodeIndex][i] + currentShortestPathLengthArray[lastProcessNodeIndex] < currentShortestPathLengthArray[i] || currentShortestPathLengthArray[i] == INF) && paths[lastProcessNodeIndex][i] != INF && !processedNodes.contains(i))
                         {
-                            currentShortestPathLength[i] = paths[lastProcessNodeIndex][i] + currentShortestPathLength[lastProcessNodeIndex];
+                            currentShortestPathLengthArray[i] = paths[lastProcessNodeIndex][i] + currentShortestPathLengthArray[lastProcessNodeIndex];
                             prevNode[i] = lastProcessNodeIndex;
                         }
                     }
                     // 在这一轮循环结束之后查找当前最短路径
-                    currentShortestPathIndex = findShortestPath(currentShortestPathLength, processedNodes);
+                    currentShortestPathIndex = findShortestPath(currentShortestPathLengthArray, processedNodes);
 
-                    // 如果找不到最小的，证明出现了孤岛。应当删除图中完全连接不到的部分
-                    if (currentShortestPathIndex == -1)
-                    {
-                        Set<String> nodeIdsToRemove = new HashSet<>();
-
-                        //这个地方，之所以要分开查找与删除是因为 currentShortestPathLength 里的下标和 nodeIds 的下标是对应的。如果边找边删刚删完前面的就找不到后面对应结点的正确下标了
-                        for (int i = 0; i < currentShortestPathLength.length; i++)
-                        {
-                            if (currentShortestPathLength[i] == INF)
-                            {
-                                nodeIdsToRemove.add(nodeIds.get(i));
-                            }
-                        }
-
-                        for (String nodeId : nodeIdsToRemove)
-                        {
-                            removeNode(nodeId);
-                        }
-                    }
-                    else
+                    // 如果找不到最短路径，那么出现孤岛，不作处理返回
+                    if (currentShortestPathIndex != -1)
                     {
                         // 找到后，将其连接的结点添加到已处理集合中
                         processedNodes.add(currentShortestPathIndex);
@@ -181,7 +165,34 @@ public class Graph
                         lastProcessNodeIndex = currentShortestPathIndex;
                     }
                 }
-                return new Pair<>(prevNode, currentShortestPathLength);
+                return new Pair<>(prevNode, currentShortestPathLengthArray);
+            }
+        }
+    }
+
+    /**
+     * 找到数组中最小路径的下标。配合最短路径算法。
+     *
+     * @param currentShortestPathLength 当前到所有结点最短长度。
+     * @param processedNodes            已经确定最短长度的结点集合。
+     */
+    private int findShortestPath(double[] currentShortestPathLength, HashSet<Integer> processedNodes)
+    {
+        synchronized (nodeIdsLock)
+        {
+            synchronized (pathsLock)
+            {
+                int minIndex = -1;
+                double min = Integer.MAX_VALUE;
+                for (int i = 0; i < currentShortestPathLength.length; i++)
+                {
+                    if (currentShortestPathLength[i] < min && currentShortestPathLength[i] != INF && !processedNodes.contains(i))
+                    {
+                        min = currentShortestPathLength[i];
+                        minIndex = i;
+                    }
+                }
+                return minIndex;
             }
         }
     }
@@ -189,7 +200,7 @@ public class Graph
     /**
      * 仅增加一个新结点。
      */
-    private void addNode(String nodeId)
+    public void addNode(String nodeId)
     {
         synchronized (nodeIdsLock)
         {
@@ -226,7 +237,7 @@ public class Graph
     /**
      * 根据传入的 Path 对象信息更新 paths 数组
      */
-    public void updatePaths(List<Path> paths)
+    public void updatePath(Path path)
     {
         synchronized (nodeIdsLock)
         {
@@ -234,24 +245,37 @@ public class Graph
             {
                 int startNodeIndex = 0;
                 int endNodeIndex = 0;
+                // 如果起始结点或结束结点不在图里，就把它添加到图里
+                if (!nodeIds.contains(path.getStartNodeId()))
+                {
+                    addNode(path.getStartNodeId());
+                }
+
+                if (!nodeIds.contains(path.getEndNodeId()))
+                {
+                    addNode(path.getEndNodeId());
+                }
+
+                startNodeIndex = getNodeIndex(path.getStartNodeId());
+                endNodeIndex = getNodeIndex(path.getEndNodeId());
+                this.paths[startNodeIndex][endNodeIndex] = path.getPathLength();
+                this.paths[endNodeIndex][startNodeIndex] = path.getPathLength();
+            }
+        }
+    }
+
+    /**
+     * 根据传入的 Path 对象信息更新 paths 数组
+     */
+    public void updatePaths(List<Path> paths)
+    {
+        synchronized (nodeIdsLock)
+        {
+            synchronized (pathsLock)
+            {
                 for (Path path : paths)
                 {
-                    // 如果起始结点或结束结点不在图里，就把它添加到图里
-
-                    if (!nodeIds.contains(path.getStartNodeId()))
-                    {
-                        addNode(path.getStartNodeId());
-                    }
-
-                    if (!nodeIds.contains(path.getEndNodeId()))
-                    {
-                        addNode(path.getEndNodeId());
-                    }
-
-                    startNodeIndex = getNodeIndex(path.getStartNodeId());
-                    endNodeIndex = getNodeIndex(path.getEndNodeId());
-                    this.paths[startNodeIndex][endNodeIndex] = path.getPathLength();
-                    this.paths[endNodeIndex][startNodeIndex] = path.getPathLength();
+                    updatePath(path);
                 }
             }
         }
@@ -343,7 +367,7 @@ public class Graph
     }
 
     /**
-     * 输出最短路径信息。
+     * 输出最短路径信息。如果检测到孤岛会进行删除。
      */
     public void printShortestPaths(String nodeId)
     {
@@ -351,46 +375,63 @@ public class Graph
         {
             synchronized (pathsLock)
             {
-                final int nodeIndex = getNodeIndex(nodeId);
-                final Pair<int[], double[]> info = Dijkstra(nodeIndex);
-
-                // 上一结点编号数组：下标 i 存储的数据 j 代表想要到达 i 号结点，需要先到达 j 号结点。nodeIndex 号结点的上一个结点编号等于 nodeIndex。
-                final int[] prevNodeArray = info.getFirst();
-
-                // 最短长度数组：下标 i 存储的数据 j 代表从 nodeIndex 号结点到 i 号结点的最短长度是 j。
-                final double[] currentShortestPathLengthArray = info.getSecond();
-
-                // 每个结点的路径字符串。刚开始是倒过来组装的（因为是倒着往回找的）。
-                StringBuilder[] pathStr = new StringBuilder[nodeIds.size()];
-
-                for (int i = 0; i < pathStr.length; i++)
+                if (nodeIds.contains(nodeId))
                 {
-                    pathStr[i] = new StringBuilder();
-                }
+                    final int nodeIndex = getNodeIndex(nodeId);
+                    final Pair<int[], double[]> info = Dijkstra(nodeIndex);
 
-                int currentNodeIndex = -1;
+                    // 上一结点编号数组：下标 i 存储的数据 j 代表想要到达 i 号结点，需要先到达 j 号结点。nodeIndex 号结点的上一个结点编号等于 nodeIndex。
+                    final int[] prevNodeArray = info.getFirst();
 
-                for (int i = 0; i < nodeIds.size(); i++)
-                {
-                    currentNodeIndex = i;
-                    while (currentNodeIndex != nodeIndex)
+                    // 最短长度数组：下标 i 存储的数据 j 代表从 nodeIndex 号结点到 i 号结点的最短长度是 j。
+                    final double[] shortestPathLengthArray = info.getSecond();
+
+                    // 每个结点的路径字符串
+                    StringBuilder[] pathStrs = new StringBuilder[nodeIds.size()];
+
+                    for (int i = 0; i < pathStrs.length; i++)
                     {
-                        pathStr[i].append(nodeIds.get(currentNodeIndex));
-                        currentNodeIndex = prevNodeArray[currentNodeIndex];
+                        pathStrs[i] = new StringBuilder();
                     }
 
-                    // 添加上出发结点
-                    pathStr[i].append(nodeId);
-                    // 倒过来是正确的顺序
-                    pathStr[i].reverse();
-
-                    if (pathStr[i].length() != 0)
+                    int currentNodeIndex = -1;
+                    for (int i = 0; i < nodeIds.size(); i++)
                     {
-                        char targetNode = pathStr[i].charAt(pathStr[i].length() - 1);
-                        System.out.printf("least-cost path to node %c: %s and the cost is %f\n", targetNode, pathStr[i].toString(), currentShortestPathLengthArray[i]);
+                        // 孤岛结点不输出
+                        if (shortestPathLengthArray[i] != Graph.INF)
+                        {
+                            currentNodeIndex = i;
+                            while (currentNodeIndex != nodeIndex)
+                            {
+                                pathStrs[i].insert(0, nodeIds.get(currentNodeIndex));
+                                currentNodeIndex = prevNodeArray[currentNodeIndex];
+                            }
+
+                            // 添加上出发结点
+                            pathStrs[i].insert(0, nodeId);
+                            System.out.printf("least-cost path to node %s: %-10s and the cost is %-6.2f\n", nodeIds.get(i), pathStrs[i].toString(), shortestPathLengthArray[i]);
+                        }
+                    }
+                    System.out.println();
+
+
+                    // 输出完成后，开始删除孤岛结点
+                    Set<String> nodeIdsToRemove = new HashSet<>();
+
+                    // 这个地方，之所以要分开查找与删除是因为 currentShortestPathLength 里的下标和 nodeIds 的下标是对应的。如果边找边删刚删完前面的就找不到后面对应结点的正确下标了
+                    for (int i = 0; i < shortestPathLengthArray.length; i++)
+                    {
+                        if (shortestPathLengthArray[i] == INF)
+                        {
+                            nodeIdsToRemove.add(nodeIds.get(i));
+                        }
+                    }
+
+                    for (String n : nodeIdsToRemove)
+                    {
+                        removeNode(n);
                     }
                 }
-                System.out.println();
             }
         }
     }
@@ -414,33 +455,6 @@ public class Graph
                     }
                 }
                 return index;
-            }
-        }
-    }
-
-    /**
-     * 找到数组中最小路径的下标。
-     *
-     * @param currentShortestPathLength 当前到所有结点最短长度。
-     * @param processedNodes            已经确定最短长度的结点集合。
-     */
-    private int findShortestPath(double[] currentShortestPathLength, HashSet<Integer> processedNodes)
-    {
-        synchronized (nodeIdsLock)
-        {
-            synchronized (pathsLock)
-            {
-                int minIndex = -1;
-                double min = Integer.MAX_VALUE;
-                for (int i = 0; i < currentShortestPathLength.length; i++)
-                {
-                    if (currentShortestPathLength[i] < min && currentShortestPathLength[i] != INF && !processedNodes.contains(i))
-                    {
-                        min = currentShortestPathLength[i];
-                        minIndex = i;
-                    }
-                }
-                return minIndex;
             }
         }
     }

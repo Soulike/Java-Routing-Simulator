@@ -6,6 +6,8 @@ import Component.Graph;
 import Objects.Path;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class GraphInfoProcessor implements MessageProcessor
@@ -28,37 +30,25 @@ public class GraphInfoProcessor implements MessageProcessor
         {
             GraphInfo info = (GraphInfo) object;
             List<Path> neighborPathList = info.getPathList();
-            List<String> graphNodeIds = graph.getNodeIds();
+            List<Path> pathList = graph.getPathList();
 
-            // 如果自己在自己图的结点里面存在邻居连接不到的结点A，而且自己也不是直接连接结点A，就选择删除结点A。
-            // 因为如果邻居通过自己来连接结点A，那么邻居必然不会连接不到结点A（因为一定可以通过自己来连接到）。结点A必然是自己通过邻居连接到的。邻居对结点A的状态更可信。
-            for (String nodeId : graphNodeIds)
+            // 如果某条与自己不相连的路径在邻居结点处不存在，那么自己也删掉这条路径
+            for (Path path : pathList)
             {
-                if (!info.hasNode(nodeId) && graph.getPathLength(this.nodeId, nodeId) == Graph.INF)
+                if (!neighborPathList.contains(path) && !path.getStartNodeId().equals(nodeId) && !path.getEndNodeId().equals(nodeId))
                 {
-                    graph.removeNode(nodeId);
+                    graph.updatePath(new Path(path.getStartNodeId(), path.getEndNodeId(), Graph.INF));
                 }
             }
+
 
             final ArrayList<Path> pathsToUpdate = new ArrayList<>();
             for (Path path : neighborPathList)
             {
-
-                // 这条路径有一端自己图里面没有，就添加这个结点以及路径
-                if (!graphNodeIds.contains(path.getStartNodeId()) || !graphNodeIds.contains(path.getEndNodeId()))
+                // 如果路径与自己完全不相连，添加这条路径
+                if (!this.nodeId.equals(path.getStartNodeId()) && !this.nodeId.equals(path.getEndNodeId()))
                 {
                     pathsToUpdate.add(path);
-                }
-
-                // 如果两端都在自己图里，且不是与本结点直接相连的路径
-                // 与本结点直接相连的路径，取本地的数据，丢弃外来数据
-                else if (!path.getStartNodeId().equals(nodeId) && !path.getEndNodeId().equals(nodeId))
-                {
-                    // 如果图的数据与接收到的图的数据不一致，就修改为接收到图的数据
-                    if (graph.getPathLength(path.getStartNodeId(), path.getEndNodeId()) != path.getPathLength())
-                    {
-                        pathsToUpdate.add(path);
-                    }
                 }
             }
             graph.updatePaths(pathsToUpdate);

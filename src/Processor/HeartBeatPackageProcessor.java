@@ -24,8 +24,11 @@ public class HeartBeatPackageProcessor implements MessageProcessor
 
     private final Timer timer;
 
-    public HeartBeatPackageProcessor(Graph graph, List<Path> neighborPaths, long sendInterval)
+    private final String nodeId;
+
+    public HeartBeatPackageProcessor(String nodeId, Graph graph, List<Path> neighborPaths, long sendInterval)
     {
+        this.nodeId = nodeId;
         this.sendInterval = sendInterval;
         lastHeartBeatReceiveTime = new HashMap<>();
 
@@ -39,7 +42,7 @@ public class HeartBeatPackageProcessor implements MessageProcessor
         }
 
         timer = new Timer(true);
-        // 定时每个 sendInterval 检查是否有结点超过三个间隔没有收到心跳包。有的话从图中删掉结点。
+        // 定时每个 sendInterval 检查是否有结点超过三个间隔没有收到心跳包。有的话设置到对应边的长度为无穷。
         timer.schedule(new TimerTask()
         {
             @Override
@@ -55,10 +58,7 @@ public class HeartBeatPackageProcessor implements MessageProcessor
                         {
                             if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
                             {
-                                if (graph.hasNode(key))
-                                {
-                                    graph.removeNode(key);
-                                }
+                                graph.updatePath(new Path(nodeId, key, Graph.INF));
                             }
                         }
                     }

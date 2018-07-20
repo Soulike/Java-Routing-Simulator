@@ -12,22 +12,15 @@ import java.util.List;
  */
 public class GraphInfo implements Serializable
 {
-    private final List<String> nodeIds;
     private final List<Path> pathList;
 
     public GraphInfo(Graph graph)
     {
-        this.nodeIds = graph.getNodeIds();
         this.pathList = graph.getPathList();
     }
 
     public List<Path> getPathList()
     {
         return new ArrayList<>(pathList);
-    }
-
-    public boolean hasNode(String nodeId)
-    {
-        return nodeIds.contains(nodeId);
     }
 }
