@@ -29,10 +29,9 @@ public class ThreadService extends Thread
      */
     public ThreadService()
     {
-        objNeedsProcess = null;
-        processor = null;
-        exit = false;
+        this(null, null);
     }
+
 
     /**
      * 用于在线程池内没有空余线程时直接创建新线程。

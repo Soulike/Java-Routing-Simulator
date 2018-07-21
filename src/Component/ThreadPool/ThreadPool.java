@@ -1,5 +1,7 @@
 package Component.ThreadPool;
 
+import Objects.Pair;
+
 import java.util.*;
 
 /**
@@ -9,50 +11,50 @@ import java.util.*;
  */
 public class ThreadPool
 {
-    /**
-     * 最小线程数量。
-     */
     private int minThreadNum;
-    /**
-     * 最大线程数量。
-     */
     private int maxThreadNum;
 
-    /**
-     * 等待线程队列，此队列中线程都处于阻塞状态等待分配。
-     */
+    // 自动清理比例
+    private double autoCleanRate;
+
+    // 等待队列大小比例
+    private double waitingQueueSizeRate;
+
+    private final List<Pair<Object, Processor>> waitingWorkQueue;
+
+    //等待线程队列，此队列中线程都处于阻塞状态等待分配。
     private final List<ThreadService> waitingThreadList;
-    /**
-     * 运行线程队列，此队列中线程都在处理用户连接。
-     */
+
+    //运行线程队列，此队列中线程都在处理用户连接。
     private final List<ThreadService> runningThreadList;
 
-    /**
-     * 等待线程队列锁。
-     */
-    private final Object waitingThreadListLock = new Object();
-    /**
-     * 运行线程队列锁。
-     */
-    private final Object runningThreadListLock = new Object();
+    private final byte[] waitingThreadListLock = new byte[0];
+    private final byte[] runningThreadListLock = new byte[0];
+    private final byte[] waitingWorkQueueLock = new byte[0];
 
 
-    /**
-     * 默认构造函数，默认范围 50-200。
-     */
     public ThreadPool()
     {
         this(50, 200);
     }
 
+
+    public ThreadPool(int minThreadNum, int maxThreadNum)
+    {
+        this(minThreadNum, maxThreadNum, 0.75, 0.5);
+    }
+
     /**
+     * 完全版本构造函数。
      * 限定线程池的线程数目限制。如果传入负值，将会忽略并使用默认值。
      * 如果最小值大于最大值，将会对调两个值。
      *
-     * @param minThreadNum 最小线程数。当可用线程数小于这个数时将向线程池中追加新线程。
-     * @param maxThreadNum 最大线程数。当可用线程数大于这个数时将清理线程池中休眠线程。
+     * @param minThreadNum         最小线程数。当可用线程数小于这个数时将向线程池中追加新线程。
+     * @param maxThreadNum         最大线程数。当可用线程数大于这个数时将任务放入等待队列。
+     * @param autoCleanRate        自动清理比例。当线程池中线程数量大于 (maxThreadNum-minThreadNum)*autoCleanRate 时，将会尝试关闭空闲线程。
+     * @param waitingQueueSizeRate 等待队列大小比例。当等待的任务大于 (maxThreadNum-minThreadNum)*waitingQueueSizeRate 时，将拒绝服务。
      */
-    public ThreadPool(int minThreadNum, int maxThreadNum)
+    public ThreadPool(int minThreadNum, int maxThreadNum, double autoCleanRate, double waitingQueueSizeRate)
     {
         if (minThreadNum < 0)
         {
@@ -72,8 +74,11 @@ public class ThreadPool
 
         this.minThreadNum = minThreadNum;
         this.maxThreadNum = maxThreadNum;
+        this.autoCleanRate = autoCleanRate;
+        this.waitingQueueSizeRate = waitingQueueSizeRate;
         waitingThreadList = new LinkedList<>();
         runningThreadList = new LinkedList<>();
+        waitingWorkQueue = new LinkedList<>();
 
         // 启动进程池管理线程
         ThreadPoolManager poolManager = new ThreadPoolManager();
@@ -117,11 +122,20 @@ public class ThreadPool
                 }
             }
 
-            // 如果都死了或者是等待线程列表为空，就创建一个新线程
-            ThreadService newThread = new ThreadService();
-            newThread.start();
-            waitingThreadList.add(newThread);
-            return newThread;
+            // 如果都死了或者是等待线程列表为空
+            // 如果线程池还没有到极限大小，就申请一个新线程返回
+            if (getCurrentThreadNum() < maxThreadNum)
+            {
+                ThreadService newThread = new ThreadService();
+                newThread.start();
+                waitingThreadList.add(newThread);
+                return newThread;
+            }
+            // 如果到了极限大小，就只能返回 null
+            else
+            {
+                return null;
+            }
         }
     }
 
@@ -134,15 +148,75 @@ public class ThreadPool
     public void createThread(Object objNeedsProcess, Processor processor)
     {
         ThreadService threadService = getRunnableThread();
-        synchronized (runningThreadListLock)
+
+        // 如果没有可用线程了
+        if (threadService == null)
         {
-            synchronized (waitingThreadListLock)
+            // 如果等待任务队列都满了，就只能丢弃任务
+            if (isWaitingWorkQueueFull())
             {
-                waitingThreadList.remove(threadService);
-                runningThreadList.add(threadService);
+                System.out.println("警告：线程池已满，拒绝创建新线程");
+            }
+            // 没有满，就放进队列尾部
+            else
+            {
+                addWaitingWork(new Pair<>(objNeedsProcess, processor));
             }
         }
-        threadService.runThreadService(objNeedsProcess, processor);
+        // 还有可用线程，就直接运行
+        else
+        {
+            synchronized (runningThreadListLock)
+            {
+                synchronized (waitingThreadListLock)
+                {
+                    waitingThreadList.remove(threadService);
+                    runningThreadList.add(threadService);
+                }
+            }
+            threadService.runThreadService(objNeedsProcess, processor);
+        }
+    }
+
+    private Pair<Object, Processor> getWaitingWork()
+    {
+        synchronized (waitingWorkQueueLock)
+        {
+            if (!waitingWorkQueue.isEmpty())
+            {
+                Pair<Object, Processor> work = waitingWorkQueue.get(0);
+                waitingWorkQueue.remove(work);
+                return work;
+            }
+            else
+            {
+                return null;
+            }
+        }
+    }
+
+    private boolean hasWaitingWork()
+    {
+        synchronized (waitingWorkQueueLock)
+        {
+            return !waitingWorkQueue.isEmpty();
+        }
+    }
+
+    private boolean isWaitingWorkQueueFull()
+    {
+        synchronized (waitingWorkQueueLock)
+        {
+            return waitingWorkQueue.size() == Math.round((maxThreadNum - minThreadNum) * waitingQueueSizeRate);
+        }
+    }
+
+    private void addWaitingWork(Pair<Object, Processor> work)
+    {
+        synchronized (waitingWorkQueueLock)
+        {
+            waitingWorkQueue.add(work);
+        }
     }
 
 
@@ -191,9 +265,9 @@ public class ThreadPool
             }
 
             // 如果线程数量过多，从等待队列中关闭指定个线程
-            if (getCurrentThreadNum() > maxThreadNum)
+            if (getCurrentThreadNum() > Math.round((maxThreadNum - minThreadNum) * autoCleanRate) + minThreadNum)
             {
-                closeThreadToMaxNum();
+                closeThreads();
             }
         }
 
@@ -208,6 +282,37 @@ public class ThreadPool
             cleanPool();
             // 移动线程到正确队列
             moveThread();
+            // 运行等待任务队列里面的任务
+            runWaitingWork();
+        }
+
+        /**
+         * 运行等待任务队列里面的任务。
+         */
+        private void runWaitingWork()
+        {
+            synchronized (waitingThreadListLock)
+            {
+                synchronized (runningThreadListLock)
+                {
+                    synchronized (waitingWorkQueueLock)
+                    {
+                        ThreadService threadService = getRunnableThread();
+                        List<Pair<Object, Processor>> runWorkList = new ArrayList<>();
+                        int i = 0;
+                        while (threadService != null && waitingWorkQueue.size() != runWorkList.size())
+                        {
+                            waitingThreadList.remove(threadService);
+                            runningThreadList.add(threadService);
+                            threadService.runThreadService(waitingWorkQueue.get(i).getFirst(), waitingWorkQueue.get(i).getSecond());
+                            runWorkList.add(waitingWorkQueue.get(i));
+                            i++;
+                            threadService = getRunnableThread();
+                        }
+                        waitingWorkQueue.removeAll(runWorkList);
+                    }
+                }
+            }
         }
 
         /**
@@ -297,14 +402,14 @@ public class ThreadPool
         }
 
         /**
-         * 在等待队列中关闭线程，直到达到最大限制。
+         * 在等待队列中关闭线程，直到达到建议值。
          */
-        private void closeThreadToMaxNum()
+        private void closeThreads()
         {
             synchronized (waitingThreadListLock)
             {
                 int exitThreadNum = 0;
-                int threadToExitNum = getCurrentThreadNum() - maxThreadNum;
+                int threadToExitNum = getCurrentThreadNum() - (int) Math.round(((maxThreadNum - minThreadNum) * autoCleanRate) + minThreadNum);
                 List<ThreadService> exitThread = new ArrayList<>();
 
                 for (ThreadService threadService : waitingThreadList)
@@ -347,7 +452,7 @@ public class ThreadPool
                     rearrangePool();
                     //printPoolStatus();
                 }
-            }, 0, 5000);
+            }, 0, 1000);
         }
     }
 }
