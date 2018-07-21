@@ -17,17 +17,16 @@ public class Main
         final int port = Integer.parseInt(args[1]);
         final Path neighborConfigFilePath = Paths.get(args[2]);
 
-        Properties properties = new Properties();
+        final Properties properties = new Properties();
 
         try (InputStream in = new FileInputStream("config.conf"))
         {
             properties.load(in);
-            long heartBeatSendInterval = Long.parseLong(properties.getProperty("heartBeatSendInterval"));
-            long graphInfoSendInterval = Long.parseLong(properties.getProperty("graphInfoSendInterval"));
-            long printInterval = Long.parseLong(properties.getProperty("printInterval"));
+            final long heartBeatSendInterval = Long.parseLong(properties.getProperty("heartBeatSendInterval"));
+            final long graphInfoSendInterval = Long.parseLong(properties.getProperty("graphInfoSendInterval")) * 1000;
+            final long printInterval = Long.parseLong(properties.getProperty("printInterval")) * 1000;
             Node node = new Node(nodeId, port, neighborConfigFilePath, heartBeatSendInterval, graphInfoSendInterval, printInterval);
             node.listen();
-
         }
         catch (FileNotFoundException e)
         {
