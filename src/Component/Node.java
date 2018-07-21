@@ -51,6 +51,7 @@ public class Node
 
     public Node(String nodeId, int port, java.nio.file.Path neighborConfigFilePath, long heartBeatSendInterval, long graphInfoSendInterval, long printInterval) throws IOException
     {
+        System.out.printf("结点 %s 开始运行\n", nodeId);
         this.nodeId = nodeId;
         this.socket = new DatagramSocket(port);
         this.graph = new Graph(nodeId);
