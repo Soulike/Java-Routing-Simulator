@@ -39,7 +39,6 @@ public class GraphInfoProcessor implements MessageProcessor
             }
         }
 
-
         final ArrayList<Path> pathsToUpdate = new ArrayList<>();
         for (Path path : neighborPathList)
         {
