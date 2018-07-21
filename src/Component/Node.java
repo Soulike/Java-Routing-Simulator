@@ -85,10 +85,7 @@ public class Node
             @Override
             public void run()
             {
-                synchronized (graph)
-                {
-                    graph.printShortestPaths(nodeId);
-                }
+                graph.printShortestPaths(nodeId);
             }
         }, printInterval, printInterval);
     }

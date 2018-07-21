@@ -114,7 +114,7 @@ public class NeighborNodeInfoProcessor implements MessageProcessor
                 processedInfoTimestamps.add(info.getSendTime());
             }
             graph.updatePaths(info.getPathList());
+            broadcast(info, datagramSocket, neighborPorts);
         }
-        broadcast(info, datagramSocket, neighborPorts);
     }
 }
