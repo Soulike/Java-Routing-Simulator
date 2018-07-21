@@ -21,7 +21,7 @@ public class ConsoleInputProcessor implements Processor
     public void process(Object object)
     {
         InputStream in = (InputStream) object;
-        Scanner scanner = new Scanner(in, StandardCharsets.UTF_8);
+        Scanner scanner = new Scanner(in);
         String command;
         while (scanner.hasNextLine())
         {

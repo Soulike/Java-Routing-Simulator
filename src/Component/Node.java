@@ -103,7 +103,7 @@ public class Node
             throw new FileNotFoundException();
         }
 
-        Scanner scanner = new Scanner(neighborConfigFilePath, StandardCharsets.UTF_8);
+        Scanner scanner = new Scanner(neighborConfigFilePath);
         int lineNum = Integer.parseInt(scanner.nextLine());
         String line;
         String[] lineParts;
