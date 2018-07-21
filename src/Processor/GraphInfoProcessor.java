@@ -26,32 +26,29 @@ public class GraphInfoProcessor implements MessageProcessor
      */
     public void process(Object object)
     {
-        synchronized (graph)
+        GraphInfo info = (GraphInfo) object;
+        List<Path> neighborPathList = info.getPathList();
+        List<Path> pathList = graph.getPathList();
+
+        // 如果某条与自己不相连的路径在邻居结点处不存在，那么自己也删掉这条路径
+        for (Path path : pathList)
         {
-            GraphInfo info = (GraphInfo) object;
-            List<Path> neighborPathList = info.getPathList();
-            List<Path> pathList = graph.getPathList();
-
-            // 如果某条与自己不相连的路径在邻居结点处不存在，那么自己也删掉这条路径
-            for (Path path : pathList)
+            if (!neighborPathList.contains(path) && !path.getStartNodeId().equals(nodeId) && !path.getEndNodeId().equals(nodeId))
             {
-                if (!neighborPathList.contains(path) && !path.getStartNodeId().equals(nodeId) && !path.getEndNodeId().equals(nodeId))
-                {
-                    graph.updatePath(new Path(path.getStartNodeId(), path.getEndNodeId(), Graph.INF));
-                }
+                graph.updatePath(new Path(path.getStartNodeId(), path.getEndNodeId(), Graph.INF));
             }
-
-
-            final ArrayList<Path> pathsToUpdate = new ArrayList<>();
-            for (Path path : neighborPathList)
-            {
-                // 如果路径与自己完全不相连，添加这条路径
-                if (!this.nodeId.equals(path.getStartNodeId()) && !this.nodeId.equals(path.getEndNodeId()))
-                {
-                    pathsToUpdate.add(path);
-                }
-            }
-            graph.updatePaths(pathsToUpdate);
         }
+
+
+        final ArrayList<Path> pathsToUpdate = new ArrayList<>();
+        for (Path path : neighborPathList)
+        {
+            // 如果路径与自己完全不相连，添加这条路径
+            if (!this.nodeId.equals(path.getStartNodeId()) && !this.nodeId.equals(path.getEndNodeId()))
+            {
+                pathsToUpdate.add(path);
+            }
+        }
+        graph.updatePaths(pathsToUpdate);
     }
 }

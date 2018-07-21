@@ -48,15 +48,12 @@ public class HeartBeatPackageProcessor implements MessageProcessor
                 long timestampNow = System.currentTimeMillis();
                 synchronized (lastHeartBeatReceiveTimeLock)
                 {
-                    synchronized (graph)
+                    Set<String> keys = lastHeartBeatReceiveTime.keySet();
+                    for (String key : keys)
                     {
-                        Set<String> keys = lastHeartBeatReceiveTime.keySet();
-                        for (String key : keys)
+                        if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
                         {
-                            if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
-                            {
-                                graph.updatePath(new Path(nodeId, key, Graph.INF));
-                            }
+                            graph.updatePath(new Path(nodeId, key, Graph.INF));
                         }
                     }
                 }

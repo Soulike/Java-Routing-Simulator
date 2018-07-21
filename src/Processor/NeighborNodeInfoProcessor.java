@@ -105,19 +105,16 @@ public class NeighborNodeInfoProcessor implements MessageProcessor
 
     public void process(Object object) throws IOException
     {
-        synchronized (graph)
+        NeighborNodeInfo info = (NeighborNodeInfo) object;
+        // 如果这个广播包是第一次收到，就进行相应处理
+        if (!hasProcessed(info))
         {
-            NeighborNodeInfo info = (NeighborNodeInfo) object;
-            // 如果这个广播包是第一次收到，就进行相应处理
-            if (!hasProcessed(info))
+            synchronized (processedInfoTimestampsLock)
             {
-                synchronized (processedInfoTimestampsLock)
-                {
-                    processedInfoTimestamps.add(info.getSendTime());
-                }
-                graph.updatePaths(info.getPathList());
+                processedInfoTimestamps.add(info.getSendTime());
             }
-            broadcast(info, datagramSocket, neighborPorts);
+            graph.updatePaths(info.getPathList());
         }
+        broadcast(info, datagramSocket, neighborPorts);
     }
 }
