@@ -70,7 +70,7 @@ public class Node
         Broadcaster.broadcast(new NeighborNodeInfo(nodeId, neighborPaths), socket, neighborPorts);
 
         // 路径信息定时发送器。这里对设定的时间进行了 25% 上下的浮动以防止路由信息更新无法扩散
-        this.graphInfoSender = new GraphInfoSender(graph, socket, neighborPorts, graphInfoSendInterval + Math.round((Math.random() - 0.5) * 0.5 * graphInfoSendInterval));
+        this.graphInfoSender = new GraphInfoSender(nodeId, graph, socket, neighborPorts, graphInfoSendInterval + Math.round((Math.random() - 0.5) * 0.5 * graphInfoSendInterval));
 
         this.heartBeatPackageSender = new HeartBeatPackageSender(nodeId, socket, neighborPorts, heartBeatSendInterval);
 

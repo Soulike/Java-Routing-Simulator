@@ -39,6 +39,8 @@ public class GraphInfoSender implements TimingSender
      */
     private List<Integer> neighborPorts;
 
+    private final String senderId;
+
 
     /**
      * @param graph          要发送的图，也就是本进程的图。
@@ -46,8 +48,9 @@ public class GraphInfoSender implements TimingSender
      * @param neighborPorts  所有邻居结点的端口号。
      * @param sendInterval   发送路径信息的间隔。
      */
-    public GraphInfoSender(Graph graph, DatagramSocket datagramSocket, List<Integer> neighborPorts, long sendInterval)
+    public GraphInfoSender(String nodeId, Graph graph, DatagramSocket datagramSocket, List<Integer> neighborPorts, long sendInterval)
     {
+        this.senderId = nodeId;
         this.graph = graph;
         this.datagramSocket = datagramSocket;
         this.neighborPorts = neighborPorts;
@@ -68,7 +71,7 @@ public class GraphInfoSender implements TimingSender
                 {
                     synchronized (graph)
                     {
-                        broadcast(new GraphInfo(graph), datagramSocket, neighborPorts);
+                        broadcast(new GraphInfo(graph, senderId), datagramSocket, neighborPorts);
                     }
                 }
                 catch (IOException e)

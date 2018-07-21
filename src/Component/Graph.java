@@ -375,6 +375,9 @@ public class Graph
         {
             synchronized (pathsLock)
             {
+                Calendar calendar = Calendar.getInstance();
+                System.out.printf("%02d:%02d:%02d\n", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND));
+
                 if (nodeIds.contains(nodeId))
                 {
                     final int nodeIndex = getNodeIndex(nodeId);

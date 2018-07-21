@@ -47,6 +47,12 @@ public class GraphInfoProcessor implements MessageProcessor
             {
                 pathsToUpdate.add(path);
             }
+
+            // 如果路径与自己相连，仅当发出者就是图的另外一端且发出者不在自己的图里时添加。
+            else if ((path.getStartNodeId().equals(info.getSenderId()) || path.getEndNodeId().equals(info.getSenderId())) && !graph.hasNode(info.getSenderId()))
+            {
+                pathsToUpdate.add(path);
+            }
         }
         graph.updatePaths(pathsToUpdate);
     }
