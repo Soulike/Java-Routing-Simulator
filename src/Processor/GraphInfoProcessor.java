@@ -48,8 +48,9 @@ public class GraphInfoProcessor implements MessageProcessor
                 pathsToUpdate.add(path);
             }
 
-            // 如果路径与自己相连，仅当发出者就是图的另外一端且发出者不在自己的图里时添加。
-            else if ((path.getStartNodeId().equals(info.getSenderId()) || path.getEndNodeId().equals(info.getSenderId())) && !graph.hasNode(info.getSenderId()))
+            // 如果路径与自己相连，仅当发出者就是图的另外一端时添加
+            // 因为心跳包是有判断失误的概率的，如果心跳包判断结点掉线而该结点发来了路径信息，就把路径重新放回去
+            else if ((path.getStartNodeId().equals(info.getSenderId()) || path.getEndNodeId().equals(info.getSenderId())))
             {
                 pathsToUpdate.add(path);
             }
