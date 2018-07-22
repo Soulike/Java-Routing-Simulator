@@ -45,12 +45,13 @@ public class HeartBeatPackageProcessor implements MessageProcessor
             @Override
             public void run()
             {
-                long timestampNow = System.currentTimeMillis();
                 synchronized (lastHeartBeatReceiveTimeLock)
                 {
+                    long timestampNow = System.currentTimeMillis();
                     Set<String> keys = lastHeartBeatReceiveTime.keySet();
                     for (String key : keys)
                     {
+                        // 如果超时，删除路径
                         if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
                         {
                             graph.updatePath(new Path(nodeId, key, Graph.INF));
