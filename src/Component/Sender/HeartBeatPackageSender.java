@@ -15,24 +15,16 @@ public class HeartBeatPackageSender implements TimingSender
 {
     private final Timer timer;
 
-    /**
-     * 发送者的 NodeId
-     */
+    // 发送者的 NodeId
     private final String senderNodeId;
 
-    /**
-     * 这个 sender 的发送间隔，单位为毫秒。
-     */
+    // 这个 sender 的发送间隔，单位为毫秒
     private final long sendInterval;
 
-    /**
-     * 这个结点向外发送数据的 socket。
-     */
+    // 这个结点向外发送数据的 socket。
     private final DatagramSocket datagramSocket;
 
-    /**
-     * 所有邻居结点的端口。
-     */
+    // 所有邻居结点的端口
     private List<Integer> neighborPorts;
 
     /**

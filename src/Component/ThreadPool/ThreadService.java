@@ -7,20 +7,14 @@ package Component.ThreadPool;
  */
 public class ThreadService extends Thread
 {
-    /**
-     * 需要被处理的对象。
-     */
+    // 需要被处理的对象。
     private Object objNeedsProcess;
 
 
-    /**
-     * 对这个连接进行处理的服务程序。
-     */
+    // 对这个连接进行处理的服务程序。
     private Processor processor;
 
-    /**
-     * 是否被要求退出。true-是，false-否。
-     */
+    // 是否被要求退出。true-是，false-否
     private boolean exit;
 
 

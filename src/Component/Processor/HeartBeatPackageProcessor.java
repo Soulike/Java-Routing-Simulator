@@ -9,14 +9,10 @@ import java.util.*;
 
 public class HeartBeatPackageProcessor implements Processor
 {
-    /**
-     * 心跳包的的发送间隔，单位为毫秒。
-     */
+    // 心跳包的的发送间隔，单位为毫秒。
     private final long sendInterval;
 
-    /**
-     * 最后收到 key 的心跳包的时间戳。
-     */
+    // 最后收到 key 的心跳包的时间戳。
     private final HashMap<String, Long> lastHeartBeatReceiveTime;
 
     private final Object lastHeartBeatReceiveTimeLock = new Object();
