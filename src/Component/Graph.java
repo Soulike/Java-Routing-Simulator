@@ -92,8 +92,8 @@ public class Graph
                 {
                     for (int col = 0; col < nodeIds.size(); col++)
                     {
-                        // 自己到自己的不算，正无穷的不算
-                        if (row != col && paths[row][col] != INF)
+                        // 自己到自己的不算，只发送一个方向的，正无穷的不算
+                        if (row > col && paths[row][col] != INF)
                         {
                             pathList.add(new Path(nodeIds.get(row), nodeIds.get(col), paths[row][col]));
                         }

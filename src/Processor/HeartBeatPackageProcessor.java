@@ -21,7 +21,6 @@ public class HeartBeatPackageProcessor implements MessageProcessor
 
     private final Object lastHeartBeatReceiveTimeLock = new Object();
 
-
     private final Timer sendTimer;
 
     public HeartBeatPackageProcessor(String nodeId, Graph graph, List<Path> neighborPaths, long sendInterval)
@@ -29,12 +28,11 @@ public class HeartBeatPackageProcessor implements MessageProcessor
         this.sendInterval = sendInterval;
         lastHeartBeatReceiveTime = new HashMap<>();
 
-        long timestampNow = System.currentTimeMillis();
         synchronized (lastHeartBeatReceiveTimeLock)
         {
             for (Path path : neighborPaths)
             {
-                lastHeartBeatReceiveTime.put(path.getEndNodeId(), timestampNow);
+                lastHeartBeatReceiveTime.put(path.getEndNodeId(), System.currentTimeMillis());
             }
         }
 
@@ -47,14 +45,12 @@ public class HeartBeatPackageProcessor implements MessageProcessor
             {
                 synchronized (lastHeartBeatReceiveTimeLock)
                 {
-                    long timestampNow = System.currentTimeMillis();
                     Set<String> keys = lastHeartBeatReceiveTime.keySet();
                     for (String key : keys)
                     {
                         // 如果超时，删除路径
-                        if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
+                        if (isTimeOut(lastHeartBeatReceiveTime.get(key), System.currentTimeMillis()))
                         {
-                            System.out.printf("到结点 %s 的连接丢失\n", key);
                             graph.updatePath(new Path(nodeId, key, Graph.INF));
                         }
                     }
@@ -67,10 +63,9 @@ public class HeartBeatPackageProcessor implements MessageProcessor
     {
         HeartBeatPackage heartBeatPackage = (HeartBeatPackage) object;
         String senderNodeId = heartBeatPackage.getSenderNodeId();
-        long timestampNow = System.currentTimeMillis();
         synchronized (lastHeartBeatReceiveTimeLock)
         {
-            lastHeartBeatReceiveTime.put(senderNodeId, timestampNow);
+            lastHeartBeatReceiveTime.put(senderNodeId, System.currentTimeMillis());
         }
     }
 
