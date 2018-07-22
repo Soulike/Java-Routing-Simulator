@@ -2,7 +2,7 @@ package Processor;
 
 import Interface.MessageProcessor;
 import Message.NeighborNodeInfo;
-import Component.Graph;
+import Component.Graph.Graph;
 
 import static util.Broadcaster.*;
 

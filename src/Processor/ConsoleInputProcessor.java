@@ -1,10 +1,9 @@
 package Processor;
 
-import Component.Graph;
+import Component.Graph.Graph;
 import Component.ThreadPool.Processor;
 
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class ConsoleInputProcessor implements Processor

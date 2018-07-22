@@ -14,12 +14,13 @@ public class ThreadPool
     private int minThreadNum;
     private int maxThreadNum;
 
-    // 自动清理比例
-    private double autoCleanRate;
+    // 当池中线程数达到这个数值时，执行清理程序
+    private final int threadCleanLevel;
 
-    // 等待队列大小比例
-    private double waitingQueueSizeRate;
+    // 任务等待队列的极限大小
+    private final int waitingWorkQueueSize;
 
+    // 任务等待队列
     private final List<Pair<Object, Processor>> waitingWorkQueue;
 
     //等待线程队列，此队列中线程都处于阻塞状态等待分配。
@@ -74,8 +75,8 @@ public class ThreadPool
 
         this.minThreadNum = minThreadNum;
         this.maxThreadNum = maxThreadNum;
-        this.autoCleanRate = autoCleanRate;
-        this.waitingQueueSizeRate = waitingQueueSizeRate;
+        this.threadCleanLevel = (int) Math.round((maxThreadNum - minThreadNum) * autoCleanRate) + minThreadNum;
+        this.waitingWorkQueueSize = (int) Math.round((maxThreadNum - minThreadNum) * waitingQueueSizeRate) + minThreadNum;
         waitingThreadList = new LinkedList<>();
         runningThreadList = new LinkedList<>();
         waitingWorkQueue = new LinkedList<>();
@@ -147,35 +148,37 @@ public class ThreadPool
      */
     public void createThread(Object objNeedsProcess, Processor processor)
     {
-        ThreadService threadService = getRunnableThread();
-
-        // 如果没有可用线程了
-        if (threadService == null)
-        {
-            // 如果等待任务队列都满了，就只能丢弃任务
-            if (isWaitingWorkQueueFull())
-            {
-                System.out.println("警告：线程池已满，拒绝创建新线程");
-            }
-            // 没有满，就放进队列尾部
-            else
-            {
-                System.out.println("放入线程池队列");
-                addWaitingWork(new Pair<>(objNeedsProcess, processor));
-            }
-        }
-        // 还有可用线程，就直接运行
-        else
+        synchronized (waitingThreadListLock)
         {
             synchronized (runningThreadListLock)
             {
-                synchronized (waitingThreadListLock)
+                ThreadService threadService = getRunnableThread();
+
+                // 如果没有可用线程了
+                if (threadService == null)
+                {
+                    synchronized (waitingWorkQueueLock)
+                    {
+                        // 如果等待任务队列都满了，就只能丢弃任务
+                        if (isWaitingWorkQueueFull())
+                        {
+                            System.out.println("警告：线程池已满，拒绝创建新线程");
+                        }
+                        // 没有满，就放进队列尾部
+                        else
+                        {
+                            addWaitingWork(new Pair<>(objNeedsProcess, processor));
+                        }
+                    }
+                }
+                // 还有可用线程，就直接运行
+                else
                 {
                     waitingThreadList.remove(threadService);
                     runningThreadList.add(threadService);
+                    threadService.runThreadService(objNeedsProcess, processor);
                 }
             }
-            threadService.runThreadService(objNeedsProcess, processor);
         }
     }
 
@@ -198,18 +201,12 @@ public class ThreadPool
 
     private boolean hasWaitingWork()
     {
-        synchronized (waitingWorkQueueLock)
-        {
-            return !waitingWorkQueue.isEmpty();
-        }
+        return !waitingWorkQueue.isEmpty();
     }
 
     private boolean isWaitingWorkQueueFull()
     {
-        synchronized (waitingWorkQueueLock)
-        {
-            return waitingWorkQueue.size() == Math.round((maxThreadNum - minThreadNum) * waitingQueueSizeRate);
-        }
+        return waitingWorkQueue.size() == waitingWorkQueueSize;
     }
 
     private void addWaitingWork(Pair<Object, Processor> work)
@@ -245,6 +242,11 @@ public class ThreadPool
         return waitingThreadList.size();
     }
 
+    public int getWaitingWorkQueueSize()
+    {
+        return waitingWorkQueue.size();
+    }
+
     /**
      * 线程池管理类，开启另一个线程定时管理线程池。
      */
@@ -259,16 +261,22 @@ public class ThreadPool
          */
         private void checkPoolRange()
         {
-            // 如果线程数量不够，就往等待队列里面添加新的
-            if (getCurrentThreadNum() < minThreadNum)
+            synchronized (waitingThreadListLock)
             {
-                addThreadToMinNum();
-            }
+                synchronized (runningThreadListLock)
+                {
+                    // 如果线程数量不够，就往等待队列里面添加新的
+                    if (getCurrentThreadNum() < minThreadNum)
+                    {
+                        addThreadToMinNum();
+                    }
 
-            // 如果线程数量过多，从等待队列中关闭指定个线程
-            if (getCurrentThreadNum() > Math.round((maxThreadNum - minThreadNum) * autoCleanRate) + minThreadNum)
-            {
-                closeThreads();
+                    // 如果线程数量过多，从等待队列中关闭指定个线程
+                    if (getCurrentThreadNum() > threadCleanLevel)
+                    {
+                        closeThreads();
+                    }
+                }
             }
         }
 
@@ -279,42 +287,18 @@ public class ThreadPool
          */
         private void rearrangePool()
         {
-            // 清理要求退出和死亡的线程
-            cleanPool();
-            // 移动线程到正确队列
-            moveThread();
-            // 运行等待任务队列里面的任务
-            runWaitingWork();
-        }
-
-        /**
-         * 运行等待任务队列里面的任务。
-         */
-        private void runWaitingWork()
-        {
-            synchronized (waitingThreadListLock)
+            synchronized (waitingWorkQueueLock)
             {
                 synchronized (runningThreadListLock)
                 {
-                    synchronized (waitingWorkQueueLock)
-                    {
-                        ThreadService threadService = getRunnableThread();
-                        List<Pair<Object, Processor>> runWorkList = new ArrayList<>();
-                        Pair<Object, Processor> work;
-                        while (threadService != null && hasWaitingWork())
-                        {
-                            waitingThreadList.remove(threadService);
-                            runningThreadList.add(threadService);
-                            work = getWaitingWork();
-                            threadService.runThreadService(work.getFirst(), work.getSecond());
-                            runWorkList.add(work);
-                            threadService = getRunnableThread();
-                        }
-                        waitingWorkQueue.removeAll(runWorkList);
-                    }
+                    // 清理要求退出和死亡的线程
+                    cleanPool();
+                    // 移动线程到正确队列
+                    moveThread();
                 }
             }
         }
+
 
         /**
          * 把运行队列中等待的线程移动到等待队列。
@@ -323,24 +307,21 @@ public class ThreadPool
         {
             List<ThreadService> threadToMoveList = new ArrayList<>();
             // 找到所有正在等待任务的线程
-            synchronized (runningThreadListLock)
-            {
-                for (ThreadService threadService : runningThreadList)
-                {
-                    if (threadService.isWaiting())
-                    {
-                        threadToMoveList.add(threadService);
-                    }
-                }
-
-                // 从运行队列中删掉它们
-                for (ThreadService threadService : threadToMoveList)
-                {
-                    runningThreadList.remove(threadService);
-                }
-            }
             synchronized (waitingThreadListLock)
             {
+                synchronized (runningThreadListLock)
+                {
+                    for (ThreadService threadService : runningThreadList)
+                    {
+                        if (threadService.isWaiting())
+                        {
+                            threadToMoveList.add(threadService);
+                        }
+                    }
+
+                    // 从运行队列中删掉它们
+                    runningThreadList.removeAll(threadToMoveList);
+                }
                 // 添加到等待队列里
                 waitingThreadList.addAll(threadToMoveList);
             }
@@ -351,13 +332,14 @@ public class ThreadPool
          */
         private void cleanPool()
         {
-            synchronized (runningThreadListLock)
-            {
-                cleanList(runningThreadList);
-            }
             synchronized (waitingThreadListLock)
             {
                 cleanList(waitingThreadList);
+            }
+            synchronized (runningThreadListLock)
+            {
+                cleanList(runningThreadList);
+
             }
         }
 
@@ -381,7 +363,7 @@ public class ThreadPool
             {
                 threadServiceList.remove(threadService);
             }
-            // 每次清理之后，唤醒线程查看一下是不是线程池为空
+
             notify();
         }
 
@@ -390,13 +372,13 @@ public class ThreadPool
          */
         private void addThreadToMinNum()
         {
-            ThreadService threadServiceTemp;
-            while (getCurrentThreadNum() < minThreadNum)
+            synchronized (waitingThreadListLock)
             {
-                threadServiceTemp = new ThreadService();
-                threadServiceTemp.start();
-                synchronized (waitingThreadListLock)
+                ThreadService threadServiceTemp;
+                while (getCurrentThreadNum() < minThreadNum)
                 {
+                    threadServiceTemp = new ThreadService();
+                    threadServiceTemp.start();
                     waitingThreadList.add(threadServiceTemp);
                 }
             }
@@ -410,7 +392,7 @@ public class ThreadPool
             synchronized (waitingThreadListLock)
             {
                 int exitThreadNum = 0;
-                int threadToExitNum = getCurrentThreadNum() - (int) Math.round(((maxThreadNum - minThreadNum) * autoCleanRate) + minThreadNum);
+                int threadToExitNum = getCurrentThreadNum() - threadCleanLevel;
                 List<ThreadService> exitThread = new ArrayList<>();
 
                 for (ThreadService threadService : waitingThreadList)
@@ -435,7 +417,63 @@ public class ThreadPool
          */
         private void printPoolStatus()
         {
-            System.out.println(String.format("线程池整理作业完成\n目前线程池线程数量: %d\n目前线程池等待线程数量: %d\n目前线程池运行线程数量: %d", getCurrentThreadNum(), getCurrentWaitingThreadNum(), getCurrentRunningThreadNum()));
+            System.out.println(String.format("线程池整理作业完成\n目前线程池线程数量: %d\n目前线程池等待线程数量: %d\n目前线程池运行线程数量: %d\n目前等待队列大小: %d\n", getCurrentThreadNum(), getCurrentWaitingThreadNum(), getCurrentRunningThreadNum(), getWaitingWorkQueueSize()));
+        }
+
+        /**
+         * 从运行线程队列中找到已经空闲的线程并直接分配等待任务队列里的任务。
+         * 如果没有空闲线程，则尝试从等待线程队列中拿出线程进行运行。
+         */
+        private void runWaitingWork()
+        {
+            synchronized (waitingThreadListLock)
+            {
+                synchronized (runningThreadListLock)
+                {
+                    synchronized (waitingWorkQueueLock)
+                    {
+                        List<ThreadService> waitingThreadServices = new LinkedList<>();
+                        Pair<Object, Processor> work;
+                        // 先看看在运行线程队列里面有没有已经空闲下来的
+                        for (ThreadService thread : runningThreadList)
+                        {
+                            if (thread.isWaiting())
+                            {
+                                waitingThreadServices.add(thread);
+                            }
+                        }
+                        // 如果有直接分配任务
+                        if (!waitingThreadServices.isEmpty())
+                        {
+                            for (ThreadService thread : waitingThreadServices)
+                            {
+                                work = getWaitingWork();
+                                if (work == null)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    thread.runThreadService(work.getFirst(), work.getSecond());
+                                }
+                            }
+                        }
+                        // 如果没有，就尝试从等待线程队列获得可用线程
+                        else
+                        {
+                            ThreadService thread = getRunnableThread();
+                            while (thread != null && !waitingWorkQueue.isEmpty())
+                            {
+                                work = getWaitingWork();
+                                thread.runThreadService(work.getFirst(), work.getSecond());
+                                waitingThreadList.remove(thread);
+                                runningThreadList.add(thread);
+                                thread = getRunnableThread();
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         /**
@@ -444,17 +482,54 @@ public class ThreadPool
 
         public void run()
         {
+            /*// 每 5 秒输出一次线程池状态
             timer.schedule(new TimerTask()
             {
                 @Override
                 public void run()
                 {
-                    checkPoolRange();
-                    rearrangePool();
-                    //printPoolStatus();
+                    printPoolStatus();
                 }
-            }, 0, 5000);
+            }, 0, 5000);*/
+
+            // 每 100 毫秒执行队列中的任务
+            timer.schedule(new TimerTask()
+            {
+                @Override
+                public void run()
+                {
+                    synchronized (waitingThreadListLock)
+                    {
+                        synchronized (runningThreadListLock)
+                        {
+                            synchronized (waitingWorkQueueLock)
+                            {
+                                runWaitingWork();
+                            }
+                        }
+                    }
+                }
+            }, 0, 100);
+
+            // 每 250 毫秒执行一次线程池整理
+            timer.schedule(new TimerTask()
+            {
+                @Override
+                public void run()
+                {
+                    synchronized (waitingThreadListLock)
+                    {
+                        synchronized (runningThreadListLock)
+                        {
+                            checkPoolRange();
+                            rearrangePool();
+                        }
+                    }
+                }
+            }, 0, 250);
         }
     }
 }
+
+
 

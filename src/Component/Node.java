@@ -1,16 +1,16 @@
 package Component;
 
+import Component.Graph.Graph;
+import Component.Graph.Path;
 import Component.ThreadPool.*;
 import Interface.*;
 import Message.*;
 import util.Broadcaster;
 import Processor.*;
-import Objects.*;
 import util.Converter;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 
@@ -56,7 +56,7 @@ public class Node
         this.socket = new DatagramSocket(port);
         this.graph = new Graph(nodeId);
 
-        this.pool = new ThreadPool(30, 300);
+        this.pool = new ThreadPool(10, 50);
         this.neighborPorts = new ArrayList<>();
 
         List<Path> neighborPaths = readConfigFile(neighborConfigFilePath);

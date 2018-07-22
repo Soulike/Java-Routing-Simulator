@@ -1,7 +1,7 @@
 package Message;
 
-import Component.Graph;
-import Objects.Path;
+import Component.Graph.Graph;
+import Component.Graph.Path;
 
 import java.io.Serializable;
 import java.util.*;

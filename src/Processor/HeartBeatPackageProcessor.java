@@ -2,8 +2,8 @@ package Processor;
 
 import Interface.MessageProcessor;
 import Message.HeartBeatPackage;
-import Component.Graph;
-import Objects.Path;
+import Component.Graph.Graph;
+import Component.Graph.Path;
 
 import java.util.*;
 

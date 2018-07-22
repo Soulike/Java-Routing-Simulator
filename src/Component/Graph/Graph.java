@@ -1,4 +1,4 @@
-package Component;
+package Component.Graph;
 
 import java.util.*;
 

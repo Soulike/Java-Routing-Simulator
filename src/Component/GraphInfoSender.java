@@ -1,5 +1,6 @@
 package Component;
 
+import Component.Graph.Graph;
 import Interface.TimingSender;
 import Message.GraphInfo;
 
@@ -69,10 +70,7 @@ public class GraphInfoSender implements TimingSender
             {
                 try
                 {
-                    synchronized (graph)
-                    {
-                        broadcast(new GraphInfo(graph, senderId), datagramSocket, neighborPorts);
-                    }
+                    broadcast(new GraphInfo(graph, senderId), datagramSocket, neighborPorts);
                 }
                 catch (IOException e)
                 {

@@ -3,7 +3,7 @@ package Message;
 import java.io.Serializable;
 import java.util.*;
 
-import Objects.Path;
+import Component.Graph.Path;
 
 /**
  * 广播使用邻居结点信息对象。
