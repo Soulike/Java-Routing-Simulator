@@ -54,6 +54,7 @@ public class HeartBeatPackageProcessor implements MessageProcessor
                         // 如果超时，删除路径
                         if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
                         {
+                            System.out.printf("到结点 %s 的连接丢失\n", key);
                             graph.updatePath(new Path(nodeId, key, Graph.INF));
                         }
                     }
