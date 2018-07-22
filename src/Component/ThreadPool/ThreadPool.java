@@ -160,6 +160,7 @@ public class ThreadPool
             // 没有满，就放进队列尾部
             else
             {
+                System.out.println("放入线程池队列");
                 addWaitingWork(new Pair<>(objNeedsProcess, processor));
             }
         }
@@ -299,14 +300,14 @@ public class ThreadPool
                     {
                         ThreadService threadService = getRunnableThread();
                         List<Pair<Object, Processor>> runWorkList = new ArrayList<>();
-                        int i = 0;
-                        while (threadService != null && waitingWorkQueue.size() != runWorkList.size())
+                        Pair<Object, Processor> work;
+                        while (threadService != null && hasWaitingWork())
                         {
                             waitingThreadList.remove(threadService);
                             runningThreadList.add(threadService);
-                            threadService.runThreadService(waitingWorkQueue.get(i).getFirst(), waitingWorkQueue.get(i).getSecond());
-                            runWorkList.add(waitingWorkQueue.get(i));
-                            i++;
+                            work = getWaitingWork();
+                            threadService.runThreadService(work.getFirst(), work.getSecond());
+                            runWorkList.add(work);
                             threadService = getRunnableThread();
                         }
                         waitingWorkQueue.removeAll(runWorkList);
@@ -452,7 +453,7 @@ public class ThreadPool
                     rearrangePool();
                     //printPoolStatus();
                 }
-            }, 0, 1000);
+            }, 0, 5000);
         }
     }
 }

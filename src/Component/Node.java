@@ -56,7 +56,7 @@ public class Node
         this.socket = new DatagramSocket(port);
         this.graph = new Graph(nodeId);
 
-        this.pool = new ThreadPool(20, 100);
+        this.pool = new ThreadPool(30, 300);
         this.neighborPorts = new ArrayList<>();
 
         List<Path> neighborPaths = readConfigFile(neighborConfigFilePath);
