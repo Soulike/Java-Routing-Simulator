@@ -1,7 +1,7 @@
-package Processor;
+package Component.Processor;
 
-import Interface.MessageProcessor;
-import Message.NeighborNodeInfo;
+import Component.ThreadPool.Processor;
+import Component.Message.NeighborNodeInfo;
 import Component.Graph.Graph;
 
 import static util.Broadcaster.*;
@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.util.*;
 
-public class NeighborNodeInfoProcessor implements MessageProcessor
+public class NeighborNodeInfoProcessor implements Processor
 {
     /**
      * 这个结点的图。

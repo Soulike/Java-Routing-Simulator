@@ -1,4 +1,4 @@
-package Processor;
+package Component.Processor;
 
 import Component.Graph.Graph;
 import Component.ThreadPool.Processor;

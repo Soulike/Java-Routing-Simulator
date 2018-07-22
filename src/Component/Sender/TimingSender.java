@@ -1,4 +1,4 @@
-package Interface;
+package Component.Sender;
 
 public interface TimingSender
 {

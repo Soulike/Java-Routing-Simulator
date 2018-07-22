@@ -1,4 +1,4 @@
-package Message;
+package Component.Message;
 
 import Component.Graph.Graph;
 import Component.Graph.Path;

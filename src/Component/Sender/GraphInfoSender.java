@@ -1,7 +1,7 @@
-package Component;
+package Component.Sender;
 
-import Interface.TimingSender;
-import Message.HeartBeatPackage;
+import Component.Graph.Graph;
+import Component.Message.GraphInfo;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -10,16 +10,19 @@ import java.util.*;
 import static util.Broadcaster.*;
 
 /**
- * 心跳包发送器。每隔一段时间发送一个心跳包。
+ * 路径信息发送器，定时发送本结点的所有路径信息（一个 Path 对象 List）。
  */
-public class HeartBeatPackageSender implements TimingSender
+public class GraphInfoSender implements TimingSender
 {
-    private final Timer timer;
+    /**
+     * 定时器。用来为发送路径信息设定定时任务。
+     */
+    private final Timer sendTimer;
 
     /**
-     * 发送者的 NodeId
+     * 结点的图对象。
      */
-    private final String senderNodeId;
+    private final Graph graph;
 
     /**
      * 这个 sender 的发送间隔，单位为毫秒。
@@ -36,35 +39,41 @@ public class HeartBeatPackageSender implements TimingSender
      */
     private List<Integer> neighborPorts;
 
+    private final String senderId;
+
+
     /**
-     * @param senderNodeId   发送者的 NodeId。
+     * @param graph          要发送的图，也就是本进程的图。
      * @param datagramSocket 发送图使用的 socket。
      * @param neighborPorts  所有邻居结点的端口号。
      * @param sendInterval   发送路径信息的间隔。
      */
-    public HeartBeatPackageSender(String senderNodeId, DatagramSocket datagramSocket, List<Integer> neighborPorts, long sendInterval)
+    public GraphInfoSender(String nodeId, Graph graph, DatagramSocket datagramSocket, List<Integer> neighborPorts, long sendInterval)
     {
-        this.senderNodeId = senderNodeId;
+        this.senderId = nodeId;
+        this.graph = graph;
         this.datagramSocket = datagramSocket;
         this.neighborPorts = neighborPorts;
-        timer = new Timer(true);
+
+        sendTimer = new Timer(true);
         this.sendInterval = sendInterval;
     }
 
     public void start()
     {
-        timer.schedule(new TimerTask()
+        // 定时把路径信息通过 socket 发送到所有邻居结点端口
+        sendTimer.schedule(new TimerTask()
         {
             @Override
             public void run()
             {
                 try
                 {
-                    broadcast(new HeartBeatPackage(senderNodeId, System.currentTimeMillis()), datagramSocket, neighborPorts);
+                    broadcast(new GraphInfo(graph, senderId), datagramSocket, neighborPorts);
                 }
                 catch (IOException e)
                 {
-                    System.err.println("心跳包发送出现错误");
+                    System.err.println("图发送出现错误");
                     e.printStackTrace();
                 }
             }
@@ -73,6 +82,6 @@ public class HeartBeatPackageSender implements TimingSender
 
     public void stop()
     {
-        timer.cancel();
+        sendTimer.cancel();
     }
 }

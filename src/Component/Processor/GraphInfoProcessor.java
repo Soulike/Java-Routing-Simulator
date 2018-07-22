@@ -1,13 +1,13 @@
-package Processor;
+package Component.Processor;
 
-import Interface.MessageProcessor;
-import Message.GraphInfo;
+import Component.ThreadPool.Processor;
+import Component.Message.GraphInfo;
 import Component.Graph.Graph;
 import Component.Graph.Path;
 
 import java.util.*;
 
-public class GraphInfoProcessor implements MessageProcessor
+public class GraphInfoProcessor implements Processor
 {
     private final Graph graph;
     private final String nodeId;

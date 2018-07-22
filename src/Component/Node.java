@@ -2,11 +2,13 @@ package Component;
 
 import Component.Graph.Graph;
 import Component.Graph.Path;
+import Component.Sender.GraphInfoSender;
+import Component.Sender.HeartBeatPackageSender;
+import Component.Sender.TimingSender;
 import Component.ThreadPool.*;
-import Interface.*;
-import Message.*;
+import Component.Message.*;
 import util.Broadcaster;
-import Processor.*;
+import Component.Processor.*;
 import util.Converter;
 
 import java.io.*;
@@ -31,9 +33,9 @@ public class Node
     /**
      * 各种处理器。
      */
-    private final MessageProcessor graphInfoProcessor;
-    private final MessageProcessor heartBeatPackageProcessor;
-    private final MessageProcessor neighborNodeInfoProcessor;
+    private final Processor graphInfoProcessor;
+    private final Processor heartBeatPackageProcessor;
+    private final Processor neighborNodeInfoProcessor;
     private final Processor consoleInputProcessor;
 
     /**

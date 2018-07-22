@@ -1,13 +1,13 @@
-package Processor;
+package Component.Processor;
 
-import Interface.MessageProcessor;
-import Message.HeartBeatPackage;
+import Component.ThreadPool.Processor;
+import Component.Message.HeartBeatPackage;
 import Component.Graph.Graph;
 import Component.Graph.Path;
 
 import java.util.*;
 
-public class HeartBeatPackageProcessor implements MessageProcessor
+public class HeartBeatPackageProcessor implements Processor
 {
     /**
      * 心跳包的的发送间隔，单位为毫秒。
