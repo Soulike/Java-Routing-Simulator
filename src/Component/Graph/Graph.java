@@ -2,8 +2,6 @@ package Component.Graph;
 
 import java.util.*;
 
-import Objects.*;
-
 /**
  * 结点使用的图对象。
  */

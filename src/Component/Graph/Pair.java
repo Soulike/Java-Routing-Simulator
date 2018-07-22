@@ -1,4 +1,4 @@
-package Objects;
+package Component.Graph;
 
 import java.io.Serializable;
 

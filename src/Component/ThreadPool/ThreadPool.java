@@ -1,6 +1,6 @@
 package Component.ThreadPool;
 
-import Objects.Pair;
+import Component.Graph.Pair;
 
 import java.util.*;
 
