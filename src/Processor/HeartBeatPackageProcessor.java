@@ -47,12 +47,11 @@ public class HeartBeatPackageProcessor implements MessageProcessor
             {
                 synchronized (lastHeartBeatReceiveTimeLock)
                 {
-                    long timestampNow = System.currentTimeMillis();
                     Set<String> keys = lastHeartBeatReceiveTime.keySet();
                     for (String key : keys)
                     {
                         // 如果超时，删除路径
-                        if (isTimeOut(lastHeartBeatReceiveTime.get(key), timestampNow))
+                        if (isTimeOut(lastHeartBeatReceiveTime.get(key), System.currentTimeMillis()))
                         {
                             System.out.printf("到结点 %s 的连接丢失\n", key);
                             graph.updatePath(new Path(nodeId, key, Graph.INF));
