@@ -417,7 +417,7 @@ public class ThreadPool
          */
         private void printPoolStatus()
         {
-            System.out.println(String.format("线程池整理作业完成\n目前线程池线程数量: %d\n目前线程池等待线程数量: %d\n目前线程池运行线程数量: %d\n目前等待队列大小: %d\n", getCurrentThreadNum(), getCurrentWaitingThreadNum(), getCurrentRunningThreadNum(), getWaitingWorkQueueSize()));
+            System.out.println(String.format("目前线程池线程数量: %d\n目前线程池等待线程数量: %d\n目前线程池运行线程数量: %d\n目前等待队列大小: %d\n", getCurrentThreadNum(), getCurrentWaitingThreadNum(), getCurrentRunningThreadNum(), getWaitingWorkQueueSize()));
         }
 
         /**

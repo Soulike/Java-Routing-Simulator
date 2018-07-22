@@ -69,7 +69,6 @@ public class ThreadService extends Thread
     {
         objNeedsProcess = null;
         processor = null;
-        //System.out.printf("线程 %s 休眠\n", Thread.currentThread().getName());
     }
 
     /**
@@ -122,12 +121,10 @@ public class ThreadService extends Thread
                 // 当不要求这个线程退出时再进行操作
                 if (!exit)
                 {
-                    //System.out.println(String.format("线程 %s 唤醒", Thread.currentThread().getName()));
                     processor.process(objNeedsProcess);
                     toWaiting();
                 }
             }
-            //System.out.println(String.format("线程 %s 退出", Thread.currentThread().getName()));
         }
         catch (Exception e)
         {
