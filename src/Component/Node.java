@@ -25,29 +25,21 @@ public class Node
     private final DatagramSocket socket;
     private final Graph graph;
 
-    /**
-     * 线程池
-     */
+    // 线程池
     private final ThreadPool pool;
 
-    /**
-     * 各种处理器。
-     */
+    // 各种处理器。
     private final Processor graphInfoProcessor;
     private final Processor heartBeatPackageProcessor;
     private final Processor neighborNodeInfoProcessor;
     private final Processor consoleInputProcessor;
 
-    /**
-     * 各种定时发送器。
-     */
+    // 各种定时发送器。
     private final TimingSender graphInfoSender;
     private final TimingSender heartBeatPackageSender;
 
 
-    /**
-     * 所有邻居结点的端口。
-     */
+    // 所有邻居结点的端口。
     private List<Integer> neighborPorts;
 
 
@@ -152,7 +144,6 @@ public class Node
             catch (ClassNotFoundException | EOFException e)
             {
                 System.out.println("端口收到无效数据");
-                e.printStackTrace();
             }
         }
     }

@@ -7,11 +7,10 @@ import java.util.*;
  */
 public class Graph
 {
-    /**
-     * 所有结点的名称。
-     */
+    // 所有结点的名称
     private List<String> nodeIds;
-    /**
+
+    /*
      * 结点之间的路径长度。
      * 例如 paths[1][2] 即为 1 号结点到 2 号结点的路径长度，他们的名字分别为 nodeIds[1] 和 nodeIds[2]。
      * paths[1][2] 与 paths[2][1] 一定是相等的。
@@ -19,16 +18,9 @@ public class Graph
      */
     private double[][] paths;
 
-    /**
-     * 对象锁。限制并发访问。
-     */
     private final byte[] nodeIdsLock = new byte[0];
     private final byte[] pathsLock = new byte[0];
 
-
-    /**
-     * 正无穷距离。
-     */
     public static final int INF = -1;
 
     /**
