@@ -102,7 +102,8 @@ public class ThreadPool
         }
         catch (InterruptedException e)
         {
-            e.printStackTrace();
+            System.err.println("等待子线程结束时发生错误");
+            System.err.println(e.getLocalizedMessage());
         }
     }
 

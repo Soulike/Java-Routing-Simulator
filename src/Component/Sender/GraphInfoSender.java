@@ -64,7 +64,7 @@ public class GraphInfoSender implements TimingSender
                 catch (IOException e)
                 {
                     System.err.println("图发送出现错误");
-                    e.printStackTrace();
+                    System.err.println(e.getLocalizedMessage());
                 }
             }
         }, 0, sendInterval);

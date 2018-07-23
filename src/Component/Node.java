@@ -139,7 +139,8 @@ public class Node
             }
             catch (ClassNotFoundException | EOFException e)
             {
-                System.out.println("端口收到无效数据");
+                System.err.println("端口收到无效数据");
+                System.err.println(e.getLocalizedMessage());
             }
         }
     }

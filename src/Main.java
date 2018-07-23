@@ -34,15 +34,18 @@ public class Main
             catch (IOException e)
             {
                 System.out.println("结点邻居结点配置文件不存在或网络连接错误");
+                System.out.println(e.getLocalizedMessage());
             }
         }
         catch (FileNotFoundException e)
         {
             System.out.println("配置文件不存在");
+            System.out.println(e.getLocalizedMessage());
         }
         catch (IOException e)
         {
             System.out.println("配置文件读取错误");
+            System.out.println(e.getLocalizedMessage());
         }
     }
 }

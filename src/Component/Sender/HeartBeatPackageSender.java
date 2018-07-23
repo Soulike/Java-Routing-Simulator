@@ -56,7 +56,7 @@ public class HeartBeatPackageSender implements TimingSender
                 catch (IOException e)
                 {
                     System.err.println("心跳包发送出现错误");
-                    e.printStackTrace();
+                    System.err.println(e.getLocalizedMessage());
                 }
             }
         }, 0, sendInterval);

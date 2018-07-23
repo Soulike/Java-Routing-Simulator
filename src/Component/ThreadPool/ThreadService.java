@@ -123,7 +123,7 @@ public class ThreadService extends Thread
         catch (Exception e)
         {
             System.err.println(String.format("线程 %s 处理请求时发生错误", Thread.currentThread().getName()));
-            e.printStackTrace();
+            System.err.println(e.getLocalizedMessage());
             toWaiting();
         }
     }
