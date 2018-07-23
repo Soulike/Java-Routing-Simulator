@@ -94,19 +94,26 @@ public class Node
         }
 
         Scanner scanner = new Scanner(neighborConfigFilePath);
-        int lineNum = Integer.parseInt(scanner.nextLine());
-        String line;
-        String[] lineParts;
-        List<Path> neighborPaths = new ArrayList<>(lineNum);
-        for (int i = 0; i < lineNum; i++)
+        try
         {
-            line = scanner.nextLine();
-            lineParts = line.split(" ");
-            neighborPaths.add(new Path(nodeId, lineParts[0], Integer.parseInt(lineParts[1])));
-            neighborPorts.add(Integer.parseInt(lineParts[2]));
+            int lineNum = Integer.parseInt(scanner.nextLine());
+            String line;
+            String[] lineParts;
+            List<Path> neighborPaths = new ArrayList<>(lineNum);
+            for (int i = 0; i < lineNum; i++)
+            {
+                line = scanner.nextLine();
+                lineParts = line.split(" ");
+                neighborPaths.add(new Path(nodeId, lineParts[0], Integer.parseInt(lineParts[1])));
+                neighborPorts.add(Integer.parseInt(lineParts[2]));
+            }
+            graph.updatePaths(neighborPaths);
+            return neighborPaths;
         }
-        graph.updatePaths(neighborPaths);
-        return neighborPaths;
+        catch (Exception e)
+        {
+            throw new IOException("结点配置文件格式错误");
+        }
     }
 
     /**
