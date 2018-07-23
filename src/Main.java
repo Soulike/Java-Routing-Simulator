@@ -19,7 +19,6 @@ public class Main
         final Path neighborConfigFilePath = Paths.get(args[2]);
 
         final Properties properties = new Properties();
-
         try (InputStream in = new FileInputStream("config.conf"))
         {
             properties.load(in);
