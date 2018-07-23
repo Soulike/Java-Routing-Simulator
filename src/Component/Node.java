@@ -27,7 +27,7 @@ public class Node
     // 各种处理器。
     private final Processor graphInfoProcessor;
     private final Processor heartBeatPackageProcessor;
-    private final Processor neighborNodeInfoProcessor;
+    private final Processor neighborPathInfoProcessor;
     private final Processor consoleInputProcessor;
 
     // 各种定时发送器。
@@ -53,7 +53,7 @@ public class Node
 
         this.graphInfoProcessor = new GraphInfoProcessor(graph, nodeId);
         this.heartBeatPackageProcessor = new HeartBeatPackageProcessor(nodeId, graph, neighborPaths, heartBeatSendInterval);
-        this.neighborNodeInfoProcessor = new NeighborPathInfoProcessor(graph, socket);
+        this.neighborPathInfoProcessor = new NeighborPathInfoProcessor(graph, socket);
         this.consoleInputProcessor = new ConsoleInputProcessor(graph, nodeId);
 
         // 把自己以及邻居结点路径信息广播到所有邻居结点
@@ -141,7 +141,7 @@ public class Node
                 }
                 else if (objectReceived instanceof NeighborPathInfo)
                 {
-                    pool.createThread(objectReceived, neighborNodeInfoProcessor);
+                    pool.createThread(objectReceived, neighborPathInfoProcessor);
                 }
             }
             catch (ClassNotFoundException | EOFException e)
