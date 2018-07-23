@@ -1,7 +1,7 @@
 package Component.Processor;
 
 import Component.ThreadPool.Processor;
-import Component.Message.NeighborNodeInfo;
+import Component.Message.NeighborPathInfo;
 import Component.Graph.Graph;
 
 import static util.Broadcaster.*;
@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.util.*;
 
-public class NeighborNodeInfoProcessor implements Processor
+public class NeighborPathInfoProcessor implements Processor
 {
     // 这个结点的图
     private final Graph graph;
@@ -28,7 +28,7 @@ public class NeighborNodeInfoProcessor implements Processor
 
     private final Timer timer;
 
-    public NeighborNodeInfoProcessor(Graph graph, DatagramSocket datagramSocket)
+    public NeighborPathInfoProcessor(Graph graph, DatagramSocket datagramSocket)
     {
         this.graph = graph;
         this.datagramSocket = datagramSocket;
@@ -72,14 +72,14 @@ public class NeighborNodeInfoProcessor implements Processor
     /**
      * 检测包是否是重复收到的。
      */
-    private boolean hasProcessed(NeighborNodeInfo info)
+    private boolean hasProcessed(NeighborPathInfo info)
     {
         return processedInfoTimestamps.contains(info.getSendTime());
     }
 
     public void process(Object object) throws IOException
     {
-        NeighborNodeInfo info = (NeighborNodeInfo) object;
+        NeighborPathInfo info = (NeighborPathInfo) object;
         // 如果这个广播包是第一次收到，就进行相应处理
         if (!hasProcessed(info))
         {

@@ -53,11 +53,11 @@ public class Node
 
         this.graphInfoProcessor = new GraphInfoProcessor(graph, nodeId);
         this.heartBeatPackageProcessor = new HeartBeatPackageProcessor(nodeId, graph, neighborPaths, heartBeatSendInterval);
-        this.neighborNodeInfoProcessor = new NeighborNodeInfoProcessor(graph, socket);
+        this.neighborNodeInfoProcessor = new NeighborPathInfoProcessor(graph, socket);
         this.consoleInputProcessor = new ConsoleInputProcessor(graph, nodeId);
 
-        // 把自己以及邻居结点信息广播到所有邻居结点
-        Broadcaster.broadcast(new NeighborNodeInfo(nodeId, neighborPaths), socket, neighborPorts);
+        // 把自己以及邻居结点路径信息广播到所有邻居结点
+        Broadcaster.broadcast(new NeighborPathInfo(nodeId, neighborPaths), socket, neighborPorts);
 
         // 路径信息定时发送器。这里对设定的时间进行了 25% 上下的浮动以防止路由信息更新无法扩散
         this.graphInfoSender = new GraphInfoSender(nodeId, graph, socket, neighborPorts, graphInfoSendInterval + Math.round((Math.random() - 0.5) * 0.5 * graphInfoSendInterval));
@@ -139,7 +139,7 @@ public class Node
                 {
                     pool.createThread(objectReceived, heartBeatPackageProcessor);
                 }
-                else if (objectReceived instanceof NeighborNodeInfo)
+                else if (objectReceived instanceof NeighborPathInfo)
                 {
                     pool.createThread(objectReceived, neighborNodeInfoProcessor);
                 }
