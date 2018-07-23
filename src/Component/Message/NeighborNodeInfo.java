@@ -10,17 +10,13 @@ import Component.Graph.Path;
  */
 public class NeighborNodeInfo implements Serializable
 {
-    /**
-     * 该包发出时的时间戳。
-     */
+    // 该包发出时的时间戳
     private final long sendTime;
-    /**
-     * 发送结点的标识。
-     */
+
+    // 发送结点的标识
     private final String senderNodeId;
-    /**
-     * 与该结点所有相邻的结点的路径信息。
-     */
+
+    //与该结点所有相邻的结点的路径信息。
     private final List<Path> pathList;
 
     public NeighborNodeInfo(String senderNodeId, List<Path> pathList)

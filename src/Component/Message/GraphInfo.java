@@ -11,6 +11,7 @@ import java.util.*;
  */
 public class GraphInfo implements Serializable
 {
+    // 所有路径的列表
     private final List<Path> pathList;
     private final String senderId;
 

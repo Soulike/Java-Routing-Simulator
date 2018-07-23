@@ -51,7 +51,7 @@ public class HeartBeatPackageSender implements TimingSender
             {
                 try
                 {
-                    broadcast(new HeartBeatPackage(senderNodeId, System.currentTimeMillis()), datagramSocket, neighborPorts);
+                    broadcast(new HeartBeatPackage(senderNodeId), datagramSocket, neighborPorts);
                 }
                 catch (IOException e)
                 {
