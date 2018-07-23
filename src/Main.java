@@ -23,9 +23,9 @@ public class Main
         try (InputStream in = new FileInputStream("config.conf"))
         {
             properties.load(in);
-            final long heartBeatSendInterval = Long.parseLong(properties.getProperty("heartBeatSendInterval"));
-            final long graphInfoSendInterval = Long.parseLong(properties.getProperty("graphInfoSendInterval")) * 1000;
-            final long printInterval = Long.parseLong(properties.getProperty("printInterval")) * 1000;
+            final long heartBeatSendInterval = (long) Double.parseDouble(properties.getProperty("heartBeatSendInterval"));
+            final long graphInfoSendInterval = (long) (Double.parseDouble(properties.getProperty("graphInfoSendInterval")) * 1000);
+            final long printInterval = (long) (Double.parseDouble(properties.getProperty("printInterval")) * 1000);
             try
             {
                 Node node = new Node(nodeId, port, neighborConfigFilePath, heartBeatSendInterval, graphInfoSendInterval, printInterval);
