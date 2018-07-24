@@ -402,7 +402,7 @@ public class Graph
 
                             // 添加上出发结点
                             pathStrs[i].insert(0, nodeId);
-                            System.out.printf("least-cost path to node %s: %-10s and the cost is %-6.2f\n", nodeIds.get(i), pathStrs[i].toString(), shortestPathLengthArray[i]);
+                            System.out.printf("least-cost path to node %s: %-20s and the cost is %-6.2f\n", nodeIds.get(i), pathStrs[i].toString(), shortestPathLengthArray[i]);
                         }
                     }
                     System.out.println();
