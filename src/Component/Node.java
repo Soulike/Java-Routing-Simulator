@@ -112,7 +112,7 @@ public class Node
         }
         catch (Exception e)
         {
-            throw new IOException("结点配置文件格式错误");
+            throw new IOException("结点配置文件格式错误", e);
         }
     }
 
